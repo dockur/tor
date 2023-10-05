@@ -1,14 +1,13 @@
-version: '3'
-
+version: "3"
 services:
   tor:
-    build: .
-    restart: always
+    container_name: tor
+    image: dockurr/tor:latest
     ports:
-      - 127.0.0.1:9050:9050
+      - 9050:9050
+      - 9051:9051
+    restart: always
     volumes:
-      - tor-data:/var/lib/tor
-
-volumes:
-  tor-data:
-    driver: local
+      - /path/to/config:/etc/tor
+      - /path/to/data:/var/lib/tor
+    stop_grace_period: 1m
