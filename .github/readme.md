@@ -11,7 +11,9 @@
 
 </div></h1>
 
-Docker image of [Tor](https://www.torproject.org/) based on Alpine.
+Small docker container for [Tor](https://www.torproject.org/) network proxy daemon.
+
+Suitable for relay, exit node or hidden service modes with SOCKSv5 proxy enabled. It works well as a single self-contained container or in cooperation with other containers (like nginx) for organizing complex hidden services on the Tor network.
 
 ## How to use
 
