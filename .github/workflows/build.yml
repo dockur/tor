@@ -21,7 +21,7 @@ jobs:
         name: Get remote package data
         run: |
           #!/bin/bash
-          curl --silent "https://pkgs.alpinelinux.org/package/edge/community/x86_64/tor" --output ./package_data.html
+          curl --show-error --fail --silent "https://pkgs.alpinelinux.org/package/edge/community/x86_64/tor" --output ./package_data.html
           latest_tag=$(grep -A 3 -i version ./package_data.html | sed -E 's#.*>([0-9\.]+)-r[0-9]+</a>#\1#g' | tail -1 | sed 's/^[ \t]*//;s/[ \t]*$//')
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
       - 
