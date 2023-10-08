@@ -19,13 +19,9 @@ jobs:
           fetch-depth: 0
       -
         name: Get remote package data
-        uses: wei/curl@master
-        with:
-          args: --silent "https://pkgs.alpinelinux.org/package/edge/community/x86_64/tor" --output ./package_data.html
-      - 
-        name: Get tag from package data
         run: |
           #!/bin/bash
+          curl --silent "https://pkgs.alpinelinux.org/package/edge/community/x86_64/tor" --output ./package_data.html
           latest_tag=$(grep -A 3 -i version ./package_data.html | sed -E 's#.*>([0-9\.]+)-r[0-9]+</a>#\1#g' | tail -1 | sed 's/^[ \t]*//;s/[ \t]*$//')
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
       - 
