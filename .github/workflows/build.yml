@@ -96,3 +96,37 @@ jobs:
         if: env.exists == 'false'
         run: |
           rm -f ${HOME}/.docker/config.json
+      -
+        name: Get previous tag
+        if: env.exists == 'false'
+        id: previousTag
+        run: |
+          name=$(git --no-pager tag --sort=creatordate --merged ${{ github.ref_name }} | tail -1)
+          echo "previousTag: $name"
+          echo "previousTag=$name" >> $GITHUB_ENV
+      -
+        name: Generate changelog
+        if: env.exists == 'false'
+        id: changelog
+        uses: requarks/changelog-action@v1
+        with:
+          token: ${{ github.token }}
+          fromTag: ${{ github.ref_name }}
+          toTag: ${{ env.previousTag }}
+          writeToFile: false
+          reverseOrder: true
+          includeInvalidCommits: true
+          excludeTypes: "docs,build,chore"
+      -
+        name: Create a release
+        if: env.exists == 'false'
+        uses: action-pack/github-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
+        with:
+          tag: "v${{ steps.prepare.outputs.version }}"
+          title: "v${{ steps.prepare.outputs.version }}"
+          body: |
+            ${{ steps.changelog.outputs.changes }}
+
+            **Full Changelog**: https://github.com/${{ github.repository }}/compare//${{ env.previousTag }}...v${{ steps.prepare.outputs.version }}
