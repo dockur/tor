@@ -105,3 +105,13 @@ jobs:
         with:
           tag: "v${{ steps.prepare.outputs.version }}"
           title: "v${{ steps.prepare.outputs.version }}"
+      -
+       name: Send mail
+       if: env.exists == 'false'
+       uses: dawidd6/action-send-mail@v3
+       with:
+         to: ${{secrets.MAILTO}}
+         from: Github Actions <${{secrets.MAILTO}}>
+         connection_url: ${{secrets.MAIL_CONNECTION}}
+         subject: Build of ${{ github.event.repository.name }} v${{ env.latest_tag }} completed successfully!
+         body: Build of ${{ github.event.repository.name }} v${{ env.latest_tag }} completed successfully!
