@@ -12,29 +12,33 @@ jobs:
       packages: write
       contents: read
     steps:
-      - 
-        name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       -
         name: Get remote package data
         run: |
           #!/bin/bash
           curl --show-error --fail --silent "https://pkgs.alpinelinux.org/package/edge/community/aarch64/tor" --output ./package_data.html
           latest_tag=$(grep -A 3 -i version ./package_data.html | sed -E 's#.*>([0-9\.]+)-r[0-9]+</a>#\1#g' | tail -1 | sed 's/^[ \t]*//;s/[ \t]*$//')
+          [ -z "$latest_tag" ] && echo "Tag not found!" && exit 1
+          [[ "$latest_tag" = v* ]] && latest_tag="${latest_tag:1}"
+          echo "Found tag: \"${latest_tag}\"" 
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
       - 
-        name: Check if the new tag exists in DockerHub
+        name: Check if the tag exists in DockerHub
         id: check-tag
         run: |
           #!/bin/bash
           dockerhub_tags=$(curl -s https://hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_REPO }}/tags | jq -r '.results[].name')
-          if echo "${dockerhub_tags}" | grep -q "${{ env.latest_tag }}"; then
+          if echo "${dockerhub_tags}" | grep -qx "${{ env.latest_tag }}"; then
             echo "exists=true" >> $GITHUB_ENV
           else
             echo "exists=false" >> $GITHUB_ENV
           fi
+      - 
+        name: Checkout
+        if: env.exists == 'false'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - 
         name: Set up Docker Buildx
         if: env.exists == 'false'
