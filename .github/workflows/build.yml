@@ -16,7 +16,8 @@ jobs:
         name: Get remote package data
         run: |
           #!/bin/bash
-          curl --show-error --fail --silent "https://pkgs.alpinelinux.org/package/edge/community/aarch64/tor" --output ./package_data.html
+          package="edge/community/aarch64/tor"
+          curl --show-error --fail --silent "https://pkgs.alpinelinux.org/package/$package" --output ./package_data.html
           latest_tag=$(grep -A 3 -i version ./package_data.html | sed -E 's#.*>([0-9\.]+)-r[0-9]+</a>#\1#g' | tail -1 | sed 's/^[ \t]*//;s/[ \t]*$//')
           [ -z "$latest_tag" ] && echo "Tag not found!" && exit 1
           [[ "$latest_tag" = v* ]] && latest_tag="${latest_tag:1}"
