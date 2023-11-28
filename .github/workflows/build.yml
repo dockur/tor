@@ -28,16 +28,17 @@ jobs:
           echo "Found tag: \"${latest_tag}\"" 
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
       - 
-        name: Check if the tag exists in DockerHub
-        id: check-tag
+        name: Check if the tag exists locally
+        uses: mukunku/tag-exists-action@v1.4.0
+        id: checkTag
+        with: 
+          tag: 'v${{ env.latest_tag }}'         
+      -
+        name: Finish when found
         run: |
           #!/bin/bash
-          dockerhub_tags=$(curl -s https://hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_REPO }}/tags | jq -r '.results[].name')
-          if echo "${dockerhub_tags}" | grep -qx "${{ env.latest_tag }}"; then
-            echo "exists=true" >> $GITHUB_ENV
-          else
-            echo "exists=false" >> $GITHUB_ENV
-          fi
+          val="${{ steps.checkTag.outputs.exists }}"
+          echo "exists=${val}" >> $GITHUB_ENV
       - 
         name: Checkout
         if: env.exists == 'false'
