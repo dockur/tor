@@ -29,7 +29,7 @@ jobs:
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
       - 
         name: Check if the tag exists locally
-        uses: mukunku/tag-exists-action@v1.4.0
+        uses: action-pack/tag-exists@v1
         id: checkTag
         with: 
           tag: 'v${{ env.latest_tag }}'         
