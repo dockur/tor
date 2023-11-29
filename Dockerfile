@@ -3,13 +3,6 @@ FROM alpine:edge
 RUN apk add --update --no-cache curl tor && rm -rf /var/cache/apk/* && \
     sed "1s/^/SocksPort 0.0.0.0:9050\n/" /etc/tor/torrc.sample > /etc/tor/torrc
 
-# Container version
-ARG VERSION_ARG="0.0"
-ENV VERSION=$VERSION_ARG
-
-LABEL org.opencontainers.image.title="Tor"
-LABEL org.opencontainers.image.description="Docker container for Tor based on Alpine"
-
 EXPOSE 9050
 EXPOSE 9051
 
