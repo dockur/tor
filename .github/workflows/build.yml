@@ -61,6 +61,8 @@ jobs:
             type=raw,value=${{ env.latest_tag }}
           labels: |
             org.opencontainers.image.title=${{ vars.NAME }}
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
       - 
         name: Set up Docker Buildx
         if: env.exists == 'false'
@@ -91,7 +93,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          annotations: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
           build-args: |
             VCS_REF=${GITHUB_SHA::8}
             VERSION_ARG=${{ steps.meta.outputs.version }}
