@@ -24,7 +24,7 @@ version: "3"
 services:
   tor:
     container_name: tor
-    image: dockurr/tor:latest
+    image: dockurr/tor
     ports:
       - 9050:9050
       - 9051:9051
