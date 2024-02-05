@@ -35,6 +35,9 @@ services:
     stop_grace_period: 1m
 ```
 
+## Stars
+[![Stars](https://starchart.cc/dockur/tor.svg?variant=adaptive)](https://starchart.cc/dockur/tor)
+
 [build_url]: https://github.com/dockur/tor/
 [hub_url]: https://hub.docker.com/r/dockurr/tor/
 [tag_url]: https://hub.docker.com/r/dockurr/tor/tags
