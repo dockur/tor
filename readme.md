@@ -17,7 +17,7 @@ Suitable for relay, exit node or hidden service modes with SOCKSv5 proxy enabled
 
 ## How to use
 
-Via `compose.yml`
+Via Docker Compose:
 
 ```yaml
 version: "3"
