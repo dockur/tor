@@ -1,4 +1,3 @@
-version: "3"
 services:
   tor:
     container_name: tor
