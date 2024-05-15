@@ -20,7 +20,6 @@ Suitable for relay, exit node or hidden service modes with SOCKSv5 proxy enabled
 Via Docker Compose:
 
 ```yaml
-version: "3"
 services:
   tor:
     container_name: tor
