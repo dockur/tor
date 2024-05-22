@@ -28,8 +28,8 @@ services:
       - 9050:9050
       - 9051:9051
     volumes:
-      - /path/to/config:/etc/tor
-      - /path/to/data:/var/lib/tor
+      - ./config:/etc/tor
+      - ./data:/var/lib/tor
     stop_grace_period: 1m
 ```
 
