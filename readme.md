@@ -33,6 +33,12 @@ services:
     stop_grace_period: 1m
 ```
 
+Via Docker CLI:
+
+```shell
+docker run -it --rm -p 9050:9050 -p 9051:9051 dockurr/tor
+```
+
 ## Stars
 [![Stars](https://starchart.cc/dockur/tor.svg?variant=adaptive)](https://starchart.cc/dockur/tor)
 
