@@ -8,4 +8,3 @@ services:
     volumes:
       - /path/to/config:/etc/tor
       - /path/to/data:/var/lib/tor
-    stop_grace_period: 1m
