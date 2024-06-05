@@ -11,7 +11,7 @@
 
 </div></h1>
 
-Small docker container for [Tor](https://www.torproject.org/) network proxy daemon.
+Docker container of the [Tor](https://www.torproject.org/) network proxy daemon.
 
 Suitable for relay, exit node or hidden service modes with SOCKSv5 proxy enabled. It works well as a single self-contained container or in cooperation with other containers (like nginx) for organizing complex hidden services on the Tor network.
 
