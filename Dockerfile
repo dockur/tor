@@ -5,7 +5,7 @@ RUN apk add --no-cache curl tor && rm -rf /var/cache/apk/* && \
 
 EXPOSE 9050 9051
 
-HEALTHCHECK --interval=300s --timeout=15s --start-period=20s \
+HEALTHCHECK --interval=300s --timeout=15s --start-period=60s --start-interval=10s \
     CMD curl -x socks5h://127.0.0.1:9050 'https://check.torproject.org/api/ip' | grep -qm1 -E '"IsTor"\s*:\s*true'
 
 VOLUME ["/var/lib/tor"]
