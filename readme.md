@@ -13,9 +13,12 @@
 
 Docker container of the [Tor](https://www.torproject.org/) network proxy daemon.
 
-Suitable for relay, exit node or hidden service modes with SOCKSv5 proxy enabled. It works well as a single self-contained container or in cooperation with other containers (like nginx) for organizing complex hidden services on the Tor network.
+## Features ✨
 
-## How to use
+  - Suitable for relay, exit node or hidden service modes with SOCKSv5 proxy enabled.
+  - Works well as a single self-contained container or in cooperation with other containers (like nginx) for organizing complex hidden services on the Tor network.
+
+## Usage  🐳
 
 Via Docker Compose:
 
@@ -39,7 +42,7 @@ Via Docker CLI:
 docker run -it --rm -p 9050:9050 -p 9051:9051 dockurr/tor
 ```
 
-## Stars
+## Stars 🌟
 [![Stars](https://starchart.cc/dockur/tor.svg?variant=adaptive)](https://starchart.cc/dockur/tor)
 
 [build_url]: https://github.com/dockur/tor/
