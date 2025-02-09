@@ -34,6 +34,7 @@ services:
     volumes:
       - ./config:/etc/tor
       - ./data:/var/lib/tor
+    restart: always
     stop_grace_period: 1m
 ```
 
