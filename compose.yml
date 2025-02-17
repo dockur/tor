@@ -1,10 +1,12 @@
 services:
   tor:
-    container_name: tor
     image: dockurr/tor
+    container_name: tor
     ports:
       - 9050:9050
       - 9051:9051
     volumes:
       - ./config:/etc/tor
       - ./data:/var/lib/tor
+    restart: always
+    stop_grace_period: 1m
