@@ -26,8 +26,8 @@ Via Docker Compose:
 ```yaml
 services:
   tor:
-    container_name: tor
     image: dockurr/tor
+    container_name: tor
     ports:
       - 9050:9050
       - 9051:9051
