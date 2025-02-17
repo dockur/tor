@@ -31,7 +31,9 @@ jobs:
           major="${latest_tag%%.*}"
           minor="${latest_tag#*.}"
           minor="${minor%%.*}"
-          echo "latest_minor=$major.$minor" >> $GITHUB_ENV
+          patch="${latest_tag#*.*.}"
+          patch="${minor%%.*}"
+          echo "latest_minor=$major.$minor.$patch" >> $GITHUB_ENV
           echo "latest_version=${latest_tag%-*}" >> $GITHUB_ENV
       - 
         name: Check if the tag exists locally
