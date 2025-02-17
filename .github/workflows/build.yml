@@ -27,7 +27,11 @@ jobs:
           [ -z "$latest_tag" ] && echo "Tag not found!" && exit 1
           [[ "$latest_tag" = v* ]] && latest_tag="${latest_tag:1}"
           echo "Found tag: \"${latest_tag}\"" 
-          echo "latest_tag=$latest_tag" >> $GITHUB_ENV
+          echo "latest_tag=$latest_tag" >> $GITHUB_ENV   
+          major="${latest_tag%%.*}"
+          minor="${latest_tag#*.}"
+          minor="${minor%%.*}"
+          echo "latest_minor=$major.$minor" >> $GITHUB_ENV
           echo "latest_version=${latest_tag%-*}" >> $GITHUB_ENV
       - 
         name: Check if the tag exists locally
@@ -59,6 +63,7 @@ jobs:
             ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=latest,priority=100
+            type=raw,value=${{ env.latest_minor }}
             type=raw,value=${{ env.latest_version }}
           labels: |
             org.opencontainers.image.title=${{ vars.NAME }}
