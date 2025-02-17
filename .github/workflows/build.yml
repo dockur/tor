@@ -32,7 +32,7 @@ jobs:
           minor="${latest_tag#*.}"
           minor="${minor%%.*}"
           patch="${latest_tag#*.*.}"
-          patch="${minor%%.*}"
+          patch="${patch%%.*}"
           echo "latest_minor=$major.$minor.$patch" >> $GITHUB_ENV
           echo "latest_version=${latest_tag%-*}" >> $GITHUB_ENV
       - 
@@ -66,6 +66,7 @@ jobs:
           tags: |
             type=raw,value=latest,priority=100
             type=raw,value=${{ env.latest_minor }}
+            type=raw,value=${{ env.latest_patch }}
             type=raw,value=${{ env.latest_version }}
           labels: |
             org.opencontainers.image.title=${{ vars.NAME }}
