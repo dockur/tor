@@ -35,13 +35,12 @@ services:
       - ./config:/etc/tor
       - ./data:/var/lib/tor
     restart: always
-    stop_grace_period: 1m
 ```
 
 Via Docker CLI:
 
 ```shell
-docker run -it --rm -p 9050:9050 -p 9051:9051 dockurr/tor
+docker run -it --rm --name tor -p 9050:9050 -p 9051:9051 -v ${PWD:-.}/config:/etc/tor -v ${PWD:-.}/data:/var/lib/tor dockurr/tor
 ```
 
 ## Stars 🌟
