@@ -21,7 +21,7 @@ Docker container of the [Tor](https://www.torproject.org/) network proxy daemon.
 
 ## Usage  🐳
 
-Via Docker Compose:
+##### Via Docker Compose:
 
 ```yaml
 services:
@@ -37,7 +37,7 @@ services:
     restart: always
 ```
 
-Via Docker CLI:
+##### Via Docker CLI:
 
 ```shell
 docker run -it --rm --name tor -p 9050:9050 -p 9051:9051 -v ${PWD:-.}/config:/etc/tor -v ${PWD:-.}/data:/var/lib/tor dockurr/tor
