@@ -6,10 +6,14 @@ ENV TOR_NICKNAME="tor-relay1337"
 # Install Tor
 RUN apk add --no-cache tor && \
     mkdir -p /etc/tor #/var/lib/tor
-    #chown -R tor:tor /etc/tor /var/lib/tor
+
 
 # Copy torrc config file into image
 COPY torrc /etc/tor/torrc
+COPY torrc /etc/tor/torrc.base
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 RUN chown tor:tor /etc/tor/torrc
 
 # Expose relay ports
@@ -24,4 +28,4 @@ USER tor
 RUN chown tor /var/lib/tor
 
 # Start Tor in the foreground
-CMD ["tor", "-f", "/etc/tor/torrc"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
