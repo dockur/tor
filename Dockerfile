@@ -1,14 +1,26 @@
 FROM alpine:edge
 
-RUN apk add --no-cache curl tor && rm -rf /var/cache/apk/* && \
-    sed "1s/^/SocksPort 0.0.0.0:9050\n/" /etc/tor/torrc.sample > /etc/tor/torrc
+# Install Tor (no curl or SOCKS proxy needed for a relay)
+RUN apk add --no-cache tor && rm -rf /var/cache/apk/* && \
+    echo -e "\
+RunAsDaemon 1\n\
+ORPort 9001\n\
+DirPort 9030\n\
+Nickname MyDockerRelay\n\
+ContactInfo myemail@example.com\n\
+ExitRelay 0\n\
+SocksPort 0\n\
+Log notice stdout\n\
+" > /etc/tor/torrc
 
-EXPOSE 9050 9051
+# Expose relay ports
+EXPOSE 9001 9030
 
-HEALTHCHECK --interval=300s --timeout=15s --start-period=60s --start-interval=10s \
-    CMD curl -x socks5h://127.0.0.1:9050 'https://check.torproject.org/api/ip' | grep -qm1 -E '"IsTor"\s*:\s*true'
-
+# Volume for persistent relay identity and state
 VOLUME ["/var/lib/tor"]
 
+# Use the tor user (default in Alpine)
 USER tor
-CMD ["tor"]
+
+# Run Tor in the foreground (as required by Docker)
+CMD ["tor", "-f", "/etc/tor/torrc"]
