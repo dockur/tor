@@ -4,17 +4,15 @@ ENV TOR_NICKNAME="tor-relay1337"
 #ENV TOR_USER=tor
 
 # Install Tor
-RUN apk add --no-cache tor && \
+RUN apk add --no-cache tor curl && \
     mkdir -p /etc/tor #/var/lib/tor
 
 
 # Copy torrc config file into image
 COPY torrc /etc/tor/torrc
-COPY torrc /etc/tor/torrc.base
+RUN chown tor:tor /etc/tor/torrc && chmod u+w /etc/tor/torrc
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
-
-RUN chown tor:tor /etc/tor/torrc
 
 # Expose relay ports
 EXPOSE 9001 9030
