@@ -1,11 +1,11 @@
 services:
   tor:
-    image: dockurr/tor
+    image: tor-relay:latest
     container_name: tor
     ports:
-      - 9050:9050
-      - 9051:9051
+      - 9001:9001
+      - 9030:9030
     volumes:
-      - ./config:/etc/tor
+      #- ./config:/etc/tor
       - ./data:/var/lib/tor
     restart: always

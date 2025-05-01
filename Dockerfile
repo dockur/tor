@@ -1,7 +1,11 @@
 FROM alpine:edge
 
 # Install Tor (no curl or SOCKS proxy needed for a relay)
-RUN apk add --no-cache tor && rm -rf /var/cache/apk/* && \
+RUN apk add --no-cache tor && \
+    rm -rf /var/cache/apk/* && \
+    mkdir -p /etc/tor && \
+    mkdir -p /var/lib/tor && \
+    chown tor:tor /var/lib/tor && \
     echo -e "\
 RunAsDaemon 1\n\
 ORPort 9001\n\
