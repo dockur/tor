@@ -1,30 +1,27 @@
 FROM alpine:edge
 
-# Install Tor (no curl or SOCKS proxy needed for a relay)
+ENV TOR_NICKNAME="tor-relay1337"
+#ENV TOR_USER=tor
+
+# Install Tor
 RUN apk add --no-cache tor && \
-    rm -rf /var/cache/apk/* && \
-    mkdir -p /etc/tor && \
-    mkdir -p /var/lib/tor && \
-    chown tor:tor /var/lib/tor && \
-    echo -e "\
-RunAsDaemon 1\n\
-ORPort 9001\n\
-DirPort 9030\n\
-Nickname MyDockerRelay\n\
-ContactInfo myemail@example.com\n\
-ExitRelay 0\n\
-SocksPort 0\n\
-Log notice stdout\n\
-" > /etc/tor/torrc
+    mkdir -p /etc/tor #/var/lib/tor
+    #chown -R tor:tor /etc/tor /var/lib/tor
+
+# Copy torrc config file into image
+COPY torrc /etc/tor/torrc
+RUN chown tor:tor /etc/tor/torrc
 
 # Expose relay ports
 EXPOSE 9001 9030
 
-# Volume for persistent relay identity and state
+# Volume for relay identity/state
 VOLUME ["/var/lib/tor"]
 
-# Use the tor user (default in Alpine)
+# Run as the unprivileged tor user
+#RUN adduser -D tor
 USER tor
+RUN chown tor /var/lib/tor
 
-# Run Tor in the foreground (as required by Docker)
+# Start Tor in the foreground
 CMD ["tor", "-f", "/etc/tor/torrc"]

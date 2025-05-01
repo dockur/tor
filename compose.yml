@@ -1,7 +1,8 @@
 services:
-  tor:
+  tor-relay:
     image: tor-relay:latest
     container_name: tor
+    user: "100:101"
     ports:
       - 9001:9001
       - 9030:9030
