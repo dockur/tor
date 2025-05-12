@@ -1,7 +1,3 @@
-ORPort 9001
-DirPort 9030
-Nickname MyDockerRelay
-ContactInfo myemail@example.com
 ExitRelay 0
 SocksPort 0
 Log notice stdout
