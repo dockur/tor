@@ -1,8 +1,6 @@
 #!/bin/sh
 
-
 TORRC_FILE=/etc/tor/torrc
-cp /etc/tor/torrc.base "$TORRC_FILE"
 
 : "${IPV4_ONLY:=1}"
 : "${OR_PORT:=9001}"
