@@ -1,12 +1,8 @@
 FROM alpine:edge
 
-ENV TOR_NICKNAME="tor-relay1337"
-#ENV TOR_USER=tor
-
 # Install Tor
 RUN apk add --no-cache tor curl && \
     mkdir -p /etc/tor #/var/lib/tor
-
 
 # Copy torrc config file into image
 COPY torrc /etc/tor/torrc
