@@ -1,5 +1,9 @@
 #!/bin/sh
 
+
+TORRC_FILE=/etc/tor/torrc
+cp /etc/tor/torrc.base "$TORRC_FILE"
+
 : "${IPV4_ONLY:=1}"
 : "${OR_PORT:=9001}"
 : "${DIR_PORT:=9030}"
@@ -11,21 +15,21 @@
 : "${CONTACT_INFO:=myemail@example.com}"
 
 if [ "$IPV4_ONLY" = "1" ]; then
-    echo "ORPort $OR_PORT IPv4Only" >> /etc/tor/torrc
-    echo "DirPort $DIR_PORT IPv4Only" >> /etc/tor/torrc
+    echo "ORPort $OR_PORT IPv4Only" >> "$TORRC_FILE"
+    echo "DirPort $DIR_PORT IPv4Only" >> "$TORRC_FILE"
 else
-    echo "ORPort $OR_PORT" >> /etc/tor/torrc
-    echo "DirPort $DIR_PORT" >> /etc/tor/torrc
+    echo "ORPort $OR_PORT" >> "$TORRC_FILE"
+    echo "DirPort $DIR_PORT" >> "$TORRC_FILE"
 fi
-echo "RelayBandwidthBurst $RELAY_BANDWIDTH_BURST" >> /etc/tor/torrc
-echo "AccountingMax $ACCOUNTING_MAX" >> /etc/tor/torrc
-echo "AccountingStart $ACCOUNTING_START" >> /etc/tor/torrc
-echo "Nickname $NICKNAME" >> /etc/tor/torrc
-echo "ContactInfo $CONTACT_INFO" >> /etc/tor/torrc
+echo "RelayBandwidthBurst $RELAY_BANDWIDTH_BURST" >> "$TORRC_FILE"
+echo "AccountingMax $ACCOUNTING_MAX" >> "$TORRC_FILE"
+echo "AccountingStart $ACCOUNTING_START" >> "$TORRC_FILE"
+echo "Nickname $NICKNAME" >> "$TORRC_FILE"
+echo "ContactInfo $CONTACT_INFO" >> "$TORRC_FILE"
 
 PUBLIC_IP=$(curl -s https://api.ipify.org)
-echo "Address $PUBLIC_IP" >> /etc/tor/torrc
+echo "Address $PUBLIC_IP" >> "$TORRC_FILE"
 
-#cat /etc/tor/torcc
+cat "$TORRC_FILE"
 
-exec tor -f /etc/tor/torrc
+exec tor -f "$TORRC_FILE"
