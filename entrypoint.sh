@@ -12,6 +12,11 @@ TORRC_FILE=/etc/tor/torrc
 : "${NICKNAME:=MyDockerRelay}"
 : "${CONTACT_INFO:=myemail@example.com}"
 
+# start fresh torrc
+echo "ExitRelay 0" > "$TORRC_FILE"
+echo "SocksPort 0" >> "$TORRC_FILE"
+echo "Log notice stdout" >> "$TORRC_FILE"
+
 if [ "$IPV4_ONLY" = "1" ]; then
     echo "ORPort $OR_PORT IPv4Only" >> "$TORRC_FILE"
     echo "DirPort $DIR_PORT IPv4Only" >> "$TORRC_FILE"
