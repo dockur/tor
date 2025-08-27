@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 FROM alpine:edge
 
 RUN apk add --no-cache curl tor && rm -rf /var/cache/apk/* && \
