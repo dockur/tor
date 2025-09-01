@@ -16,35 +16,23 @@ Docker container of the [Tor](https://www.torproject.org/) network proxy daemon.
 
 ## Features ✨
 
-  - Suitable for relay, exit node or hidden service modes with SOCKSv5 proxy enabled.
-  - Works well as a single self-contained container or in cooperation with other containers (like nginx) for organizing complex hidden services on the Tor network.
+  - Intended to be used as a relay
 
 ## Usage  🐳
-
-##### Via Docker Compose:
-
-```yaml
-services:
-  tor:
-    image: dockurr/tor
-    container_name: tor
-    ports:
-      - 9050:9050
-      - 9051:9051
-    volumes:
-      - ./config:/etc/tor
-      - ./data:/var/lib/tor
-    restart: always
-```
 
 ##### Via Docker CLI:
 
 ```shell
-docker run -it --rm --name tor -p 9050:9050 -p 9051:9051 -v "${PWD:-.}/config:/etc/tor" -v "${PWD:-.}/data:/var/lib/tor dockurr/tor"
+docker run --name tor-relay -p 9001:9001 -p 9030:9030 -v $(pwd)/data:/var/lib/tor tor-relay:latest
 ```
 
-## Stars 🌟
-[![Stars](https://starchart.cc/dockur/tor.svg?variant=adaptive)](https://starchart.cc/dockur/tor)
+Users will need to create `data/` directory and own it with the `tor` user id
+(100).
+
+```shell
+mkdir data/
+sudo chown 100:100 ./data
+```
 
 [build_url]: https://github.com/dockur/tor/
 [hub_url]: https://hub.docker.com/r/dockurr/tor/

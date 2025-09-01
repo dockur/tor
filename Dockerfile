@@ -16,6 +16,8 @@ EXPOSE 9001 9030
 # Volume for relay identity/state
 VOLUME ["/var/lib/tor"]
 
+RUN id tor
+
 # Run as the unprivileged tor user
 #RUN adduser -D tor
 USER tor

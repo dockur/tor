@@ -7,11 +7,5 @@ services:
       - 9001:9001
       - 9030:9030
     volumes:
-      #- ./config:/etc/tor
       - ./data:/var/lib/tor
     restart: always
-    environment:
-      - OR_PORT=1234
-      - OR_PORT=1234
-      - NICKNAME=HelloWorld
-      - ACCOUNTING_MAX=500 GBytes
