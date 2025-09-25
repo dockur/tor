@@ -2,7 +2,7 @@
 
 FROM alpine:edge
 
-RUN apk add --no-cache curl tor && rm -rf /var/cache/apk/* && \
+RUN apk add --no-cache curl tor nyx && rm -rf /var/cache/apk/* && \
     sed "1s/^/SocksPort 0.0.0.0:9050\n/" /etc/tor/torrc.sample > /etc/tor/torrc
 
 EXPOSE 9050 9051
