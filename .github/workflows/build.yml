@@ -6,6 +6,8 @@ on:
     branches: [master]
   # run it during pull request
   pull_request:
+  # run it manually
+  workflow_dispatch:
 
 jobs:
   # define job to build and publish docker image
