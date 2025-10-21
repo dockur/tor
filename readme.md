@@ -41,7 +41,7 @@ services:
 ##### Via Docker CLI:
 
 ```shell
-docker run -it --rm --name tor -p 9050:9050 -p 9051:9051 -v "${PWD:-.}/config:/etc/tor" -v "${PWD:-.}/data:/var/lib/tor dockurr/tor"
+docker run -it --rm --name tor -p 9050:9050 -p 9051:9051 -v "${PWD:-.}/config:/etc/tor" -v "${PWD:-.}/data:/var/lib/tor" docker.io/dockurr/tor
 ```
 
 ## Stars 🌟
