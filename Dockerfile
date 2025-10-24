@@ -8,7 +8,7 @@ RUN go build -ldflags="-s -w" -o healthcheck main.go
 
 FROM alpine:edge
 
-RUN apk add --no-cache tor && rm -rf /var/cache/apk/*
+RUN apk add --no-cache tor bash nyx lyrebird && rm -rf /var/cache/apk/*
 
 COPY --from=builder /build/healthcheck /usr/local/bin/healthcheck
 COPY docker-entrypoint.sh /usr/local/bin/
