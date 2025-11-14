@@ -36,7 +36,7 @@ jobs:
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
           echo "latest_version=${latest_tag%-*}" >> $GITHUB_ENV
           echo "latest_minor=$major.$minor.$patch" >> $GITHUB_ENV
-          echo "latest_major=$major" >> $GITHUB_ENV
+          echo "latest_major=$major.$minor" >> $GITHUB_ENV
       - 
         name: Check if the tag exists locally
         uses: action-pack/tag-exists@v1
