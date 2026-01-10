@@ -1,7 +1,14 @@
 services:
   tor:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: dockurr/tor
     container_name: tor
+    environment:
+      - TOR_CONTROL_PASSWORD=password
+      # Optional: Connect healthcheck to external Tor server
+      # - TOR_CONTROL_ADDR=192.168.1.100:9051
     ports:
       - 9050:9050
       - 9051:9051
