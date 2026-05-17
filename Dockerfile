@@ -12,19 +12,16 @@ RUN set -eu && \
     apk update && \
     apk upgrade && \
     apk --no-cache add \
-    curl \
     tor \
     bash \
     nyx \
     lyrebird && \
-    rm -rf /tmp/* /var/cache/apk/* && \
-    sed "1s/^/SocksPort 0.0.0.0:9050\n/" /etc/tor/torrc.sample > /etc/tor/torrc
+    rm -rf /tmp/* /var/cache/apk/*
 
 COPY --from=builder /build/healthcheck /usr/local/bin/healthcheck
 COPY entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Fallbacks
 ENV TOR_CONTROL_ADDR=127.0.0.1:9051
 ENV TOR_CONTROL_PASSWORD=password
 
