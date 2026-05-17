@@ -2,8 +2,6 @@ services:
   tor:
     image: dockurr/tor
     container_name: tor
-    environment:
-      - TOR_CONTROL_PASSWORD=password
     ports:
       - 9050:9050
       - 9051:9051
