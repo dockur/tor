@@ -53,7 +53,7 @@ docker run -it --rm --name tor -p 9050:9050 -p 9051:9051 -v "${PWD:-.}/config:/e
   - For external Tor server: `TOR_CONTROL_ADDR=192.168.1.100:9051`
   - Useful for monitoring remote relays or separate Tor containers
 
-- `TO_CONTROL_PASSWORD` - Password for Tor control port (default: "password")
+- `TOR_CONTROL_PASSWORD` - Password for Tor control port (default: "password")
   - The container automatically generates the required hash
   - Change this for production deployments
   - Example: `TOR_CONTROL_PASSWORD=mySecurePassword123`
