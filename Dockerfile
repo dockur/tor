@@ -8,8 +8,6 @@ RUN go build -ldflags="-s -w" -o healthcheck main.go
 
 FROM alpine:edge
 
-RUN apk add --no-cache tor bash nyx lyrebird && rm -rf /var/cache/apk/* && \
-    sed "1s/^/SocksPort 0.0.0.0:9050\n/" /etc/tor/torrc.sample > /etc/tor/torrc
 RUN apk add --no-cache tor bash nyx lyrebird && rm -rf /var/cache/apk/*
 
 COPY --from=builder /build/healthcheck /usr/local/bin/healthcheck
