@@ -13,8 +13,8 @@ RUN apk add --no-cache tor bash nyx lyrebird && rm -rf /var/cache/apk/* && \
 RUN apk add --no-cache tor bash nyx lyrebird && rm -rf /var/cache/apk/*
 
 COPY --from=builder /build/healthcheck /usr/local/bin/healthcheck
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+COPY entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Fallbacks
 ENV TOR_CONTROL_ADDR=127.0.0.1:9051
@@ -29,5 +29,5 @@ VOLUME ["/etc/tor"]
 VOLUME ["/var/lib/tor"]
 
 USER tor
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD []
