@@ -15,7 +15,7 @@ if [ -z "$HASHED_PASSWORD" ]; then
     exit 1
 fi
 
-echo "Hash generated successfully"
+echo "Hash generated successfully!"
 
 # Create defaults file with default settings for Docker healthcheck
 # These can be overridden by user's /etc/tor/torrc
