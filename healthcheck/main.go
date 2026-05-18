@@ -78,11 +78,14 @@ func healthcheck() error {
 		return fmt.Errorf("failed to get fingerprint: %w", err)
 	}
 
-	// Query Onionoo API
-	if err := checkOnionoo(fingerprint); err != nil {
-		return fmt.Errorf("onionoo check failed: %w", err)
-	}
-
+	// Query OnionooAPI when relay mode is active
+	if !strings.HasPrefix(fingerprint, "skip") {
+    	// Query Onionoo API
+    	if err := checkOnionoo(fingerprint); err != nil {
+	    	return fmt.Errorf("onionoo check failed: %w", err)
+    	}
+    }
+	
 	return nil
 }
 
@@ -140,7 +143,8 @@ func getFingerprint(conn net.Conn, reader *bufio.Reader) (string, error) {
 			break
 		} else if strings.HasPrefix(line, "551") {
 			// Not running as relay
-			return "", fmt.Errorf("not running as a relay: %s", line)
+			return "skip", nil
+			// return "", fmt.Errorf("not running as a relay: %s", line)
 		}
 	}
 
