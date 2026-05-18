@@ -1,10 +1,10 @@
 !/usr/bin/env bash
 set -Eeuo pipefail
 
-: "${CHECK:="N"}"
+: "${CHECK:="false"}"
 
-if [[ "$CHECK" != [Yy1]* ]]; then
-  echo "Healthcheck disabled, set the CHECK=Y variable to enable."
+if [[ "${CHECK,,}" != "true" && "$CHECK" != [Yy1]* ]]; then
+  echo "Healthcheck disabled, set the CHECK=true variable to enable."
   exit 0
 fi
 
