@@ -18,7 +18,6 @@ RUN set -eu && \
     tini \
     curl \
     lyrebird && \
-    adduser -S tor -G tor && \
     rm -rf /tmp/* /var/cache/apk/*
 
 COPY --chmod=755 entrypoint.sh /usr/local/bin/
