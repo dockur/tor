@@ -32,21 +32,18 @@ services:
     ports:
       - 9050:9050
       - 9051:9051
-    volumes:
-      - ./config:/etc/tor
-      - ./data:/var/lib/tor
     restart: always
 ```
 
 ##### Via Docker CLI:
 
 ```shell
-docker run -it --rm --name tor -p 9050:9050 -p 9051:9051 -v "${PWD:-.}/config:/etc/tor" -v "${PWD:-.}/data:/var/lib/tor" docker.io/dockurr/tor
+docker run -it --rm --name tor -p 9050:9050 -p 9051:9051 docker.io/dockurr/tor
 ```
 
 ## Configuration 🔧
 
-**Environment Variables:**
+**Environment variables:**
 
 - `PASSWORD` - Password for the Tor control port (default: "password")
   - Change this for production deployments
@@ -60,11 +57,19 @@ docker run -it --rm --name tor -p 9050:9050 -p 9051:9051 -v "${PWD:-.}/config:/e
   - Set to "true" for troubleshooting
   - Shows raw Tor Control Protocol responses
 
-**Custom Configuration:**
+**Advanced configuration:**
 
-The container supports custom Tor configuration via a mounted `torrc` file at `/etc/tor/torrc`, so you can provide your own  relay, exit node, and hidden service settings.
+You can provide a custom Tor configuration file to the container, via a `torrc` file in `/etc/tor`, with your own  relay, exit node, or hidden service settings.
 
-**Example custom torrc file:**
+Mount the following directories in your compose file:
+
+```yaml
+volumes:
+  - ./config:/etc/tor
+  - ./data:/var/lib/tor
+```
+
+and place the custom `torrc` file in your `./config` directory, for example:
 
 ```
 # Your relay configuration
