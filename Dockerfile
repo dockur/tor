@@ -17,6 +17,7 @@ RUN set -eu && \
     nyx \
     tini \
     curl \
+    su-exec \
     lyrebird && \
     rm -rf /tmp/* /var/cache/apk/*
 

@@ -37,4 +37,4 @@ chown -R tor:tor /tmp/torrc-defaults || :
 
 # Start Tor with defaults that can be overridden by /etc/tor/torrc
 # The --defaults-torrc file has lowest priority, user's torrc takes precedence
-exec su - tor -c "tor --defaults-torrc /tmp/torrc-defaults $@"
+exec su-exec tor tor --defaults-torrc /tmp/torrc-defaults "$@"
