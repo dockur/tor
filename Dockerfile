@@ -22,7 +22,7 @@ RUN set -eu && \
 
 COPY --chmod=755 entrypoint.sh /usr/local/bin/
 COPY --chmod=755 healthcheck.sh /usr/local/bin/
-COPY --from=builder /build/healthcheck /usr/local/bin/healthcheck
+COPY --chmod=755 --from=builder /build/healthcheck /usr/local/bin/healthcheck
 
 ENV CHECK=false
 ENV DEBUG=false
