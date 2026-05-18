@@ -2,11 +2,11 @@
 set -e
 
 # Get control password from environment (default: "password")
-TOR_CONTROL_PASSWORD="${TOR_CONTROL_PASSWORD:-password}"
+PASSWORD="${PASSWORD:-password}"
 
 # Generate hashed password using Tor
 # tor --hash-password outputs the hash on the last line
-HASHED_PASSWORD=$(tor --hash-password "$TOR_CONTROL_PASSWORD" | tail -n 1)
+HASHED_PASSWORD=$(tor --hash-password "$PASSWORD" | tail -n 1)
 
 if [ -z "$HASHED_PASSWORD" ]; then
     echo "ERROR: Failed to generate password hash" >&2
@@ -23,7 +23,7 @@ cat > /tmp/torrc-defaults <<EOF
 # Binds to 127.0.0.1, accessible only within container
 ControlPort 9051
 
-# Control port password (generated from TOR_CONTROL_PASSWORD environment variable)
+# Control port password (generated from PASSWORD environment variable)
 HashedControlPassword $HASHED_PASSWORD
 EOF
 
