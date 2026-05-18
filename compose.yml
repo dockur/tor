@@ -5,7 +5,4 @@ services:
     ports:
       - 9050:9050
       - 9051:9051
-    volumes:
-      - ./config:/etc/tor
-      - ./data:/var/lib/tor
     restart: always
