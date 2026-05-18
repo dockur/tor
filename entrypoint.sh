@@ -1,14 +1,10 @@
 #!/bin/sh
 set -e
 
-# Create directories
-mkdir -p tor. 2>/dev/null || : 
-mkdir -p /etc/tor 2>/dev/null || :
-mkdir -p /var/lib/tor 2>/dev/null || :
-mkdir -p /var/log/tor 2>/dev/null || :
- 
 # Fix directory permissions
-chown -Rh tor. /etc/tor /var/lib/tor /var/log/tor 2>&1 | grep -iv 'Read-only' || :
+chown "$(id -u):$(id -g)" /var/lib/tor || :
+chmod g-rwx,o-rwx /var/lib/tor || :
+chown -Rh /etc/tor /var/lib/tor /var/log/tor 2>&1 | grep -iv 'Read-only' || :
 
 # Get control password from environment (default: "password")
 PASSWORD="${PASSWORD:-password}"
