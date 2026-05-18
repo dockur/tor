@@ -2,10 +2,10 @@
 set -e
 
 # Create directories
-mkdir -p tor. 
-mkdir -p /etc/tor
-mkdir -p /var/lib/tor
-mkdir -p /var/log/tor
+mkdir -p tor. 2>/dev/null || : 
+mkdir -p /etc/tor 2>/dev/null || :
+mkdir -p /var/lib/tor 2>/dev/null || :
+mkdir -p /var/log/tor 2>/dev/null || :
  
 # Fix directory permissions
 chown -Rh tor. /etc/tor /var/lib/tor /var/log/tor 2>&1 | grep -iv 'Read-only' || :
