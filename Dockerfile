@@ -18,12 +18,12 @@ RUN set -eu && \
     lyrebird && \
     rm -rf /tmp/* /var/cache/apk/*
 
-COPY --from=builder /build/healthcheck /usr/local/bin/healthcheck
-
 COPY --chmod=755 entrypoint.sh /usr/local/bin/
 COPY --chmod=755 healthcheck.sh /usr/local/bin/
+COPY --from=builder /build/healthcheck /usr/local/bin/healthcheck
 
-ENV CHECK=N
+ENV CHECK=false
+ENV DEBUG=false
 ENV ADDR=127.0.0.1:9051
 ENV PASSWORD=password
 
