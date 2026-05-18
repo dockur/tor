@@ -15,6 +15,8 @@ RUN set -eu && \
     tor \
     bash \
     nyx \
+    tini \
+    curl \
     lyrebird && \
     rm -rf /tmp/* /var/cache/apk/*
 
@@ -36,5 +38,4 @@ VOLUME ["/etc/tor"]
 VOLUME ["/var/lib/tor"]
 
 USER tor
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD []
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/entrypoint.sh"]
