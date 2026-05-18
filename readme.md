@@ -18,7 +18,7 @@ Docker container of the [Tor](https://www.torproject.org/) network proxy daemon.
 
   - Suitable for relay, exit node or hidden service modes with SOCKSv5 proxy enabled.
   - Works well as a single self-contained container or in cooperation with other containers (like nginx) for organizing complex hidden services on the Tor network.
-  - Includes a (optional) healthcheck, monitoring via [Nyx](https://nyx.torproject.org/) and the Lyrebird obfs4proxy.
+  - Includes an extensive healthcheck, plus monitoring via [Nyx](https://nyx.torproject.org/) and the Lyrebird obfs4proxy.
 
 ## Usage  🐳
 
