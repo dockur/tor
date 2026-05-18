@@ -4,7 +4,6 @@ set -e
 # Fix directory permissions
 chown "$(id -u):$(id -g)" /var/lib/tor || :
 chmod g-rwx,o-rwx /var/lib/tor || :
-chown -Rh /etc/tor /var/lib/tor /var/log/tor 2>&1 | grep -iv 'Read-only' || :
 
 # Get control password from environment (default: "password")
 PASSWORD="${PASSWORD:-password}"
