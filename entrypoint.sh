@@ -3,6 +3,7 @@ set -e
 
 # Fix directory permissions
 chown -R tor:tor /etc/tor || :
+chmod ugo+rwx /etc/tor || :
 chown -R tor:tor /var/lib/tor || :
 chmod g-rwx,o-rwx /var/lib/tor || :
 
