@@ -19,8 +19,9 @@ RUN set -eu && \
     rm -rf /tmp/* /var/cache/apk/*
 
 COPY --from=builder /build/healthcheck /usr/local/bin/healthcheck
-COPY entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/entrypoint.sh
+
+COPY --chmod=755 entrypoint.sh /usr/local/bin/
+COPY --chmod=755 healthcheck.sh /usr/local/bin/
 
 ENV TOR_CONTROL_ADDR=127.0.0.1:9051
 ENV TOR_CONTROL_PASSWORD=password
@@ -28,7 +29,7 @@ ENV TOR_CONTROL_PASSWORD=password
 EXPOSE 9050 9051
 
 HEALTHCHECK --interval=600s --timeout=30s --start-period=60s --start-interval=60s \
-    CMD ["/usr/local/bin/healthcheck"]
+    CMD ["/usr/local/bin/healthcheck.sh"]
 
 VOLUME ["/etc/tor"]
 VOLUME ["/var/lib/tor"]
