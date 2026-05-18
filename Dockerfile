@@ -24,6 +24,8 @@ COPY --chmod=755 entrypoint.sh /usr/local/bin/
 COPY --chmod=755 healthcheck.sh /usr/local/bin/
 COPY --chmod=755 --from=builder /build/healthcheck /usr/local/bin/healthcheck
 
+RUN chmod ugo+rwx /etc/tor
+
 ENV CHECK=false
 ENV DEBUG=false
 ENV ADDR=127.0.0.1:9051
