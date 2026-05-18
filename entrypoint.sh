@@ -2,7 +2,8 @@
 set -e
 
 # Fix directory permissions
-chown "$(id -u):$(id -g)" /var/lib/tor || :
+chown -R tor:tor /etc/tor || :
+chown -R tor:tor /var/lib/tor || :
 chmod g-rwx,o-rwx /var/lib/tor || :
 
 # Get control password from environment (default: "password")
@@ -31,6 +32,8 @@ ControlPort 9051
 HashedControlPassword $HASHED_PASSWORD
 EOF
 
+chown -R tor:tor /tmp/torrc-defaults || :
+
 # Start Tor with defaults that can be overridden by /etc/tor/torrc
 # The --defaults-torrc file has lowest priority, user's torrc takes precedence
-exec tor --defaults-torrc /tmp/torrc-defaults "$@"
+exec su - tor -c "tor --defaults-torrc /tmp/torrc-defaults $@"
