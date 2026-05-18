@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+# Fix directory permissions
+chown -Rh tor. /etc/tor /var/lib/tor /var/log/tor 2>&1 | grep -iv 'Read-only' || :
+
 # Get control password from environment (default: "password")
 PASSWORD="${PASSWORD:-password}"
 
