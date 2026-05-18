@@ -18,17 +18,16 @@ RUN set -eu && \
     tini \
     curl \
     lyrebird && \
+    addgroup -S tor && \
+    adduser -S tor -G tor && \
     rm -rf /tmp/* /var/cache/apk/*
 
 COPY --chmod=755 entrypoint.sh /usr/local/bin/
 COPY --chmod=755 healthcheck.sh /usr/local/bin/
 COPY --chmod=755 --from=builder /build/healthcheck /usr/local/bin/healthcheck
 
-RUN chmod ugo+rwx /etc/tor
-
 ENV CHECK=false
 ENV DEBUG=false
-ENV ADDR=127.0.0.1:9051
 ENV PASSWORD=password
 
 EXPOSE 9050 9051
@@ -39,5 +38,4 @@ HEALTHCHECK --interval=600s --timeout=30s --start-period=60s --start-interval=60
 VOLUME ["/etc/tor"]
 VOLUME ["/var/lib/tor"]
 
-USER tor
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/entrypoint.sh"]
