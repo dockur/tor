@@ -18,7 +18,6 @@ RUN set -eu && \
     tini \
     curl \
     lyrebird && \
-    addgroup -S tor && \
     adduser -S tor -G tor && \
     rm -rf /tmp/* /var/cache/apk/*
 
