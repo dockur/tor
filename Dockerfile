@@ -23,8 +23,9 @@ COPY --from=builder /build/healthcheck /usr/local/bin/healthcheck
 COPY --chmod=755 entrypoint.sh /usr/local/bin/
 COPY --chmod=755 healthcheck.sh /usr/local/bin/
 
-ENV TOR_CONTROL_ADDR=127.0.0.1:9051
-ENV TOR_CONTROL_PASSWORD=password
+ENV CHECK=N
+ENV ADDR=127.0.0.1:9051
+ENV PASSWORD=password
 
 EXPOSE 9050 9051
 
