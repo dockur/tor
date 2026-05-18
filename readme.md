@@ -18,7 +18,7 @@ Docker container of the [Tor](https://www.torproject.org/) network proxy daemon.
 
   - Suitable for relay, exit node or hidden service modes with SOCKSv5 proxy enabled.
   - Works well as a single self-contained container or in cooperation with other containers (like nginx) for organizing complex hidden services on the Tor network.
-  - Includes healthcheck via [Onionoo](https://onionoo.torproject.org), [Nyx](https://nyx.torproject.org/) for monitoring and the Lyrebird obfs4proxy.
+  - Includes (optional) healthcheck via [Onionoo](https://onionoo.torproject.org), monitoring via [Nyx](https://nyx.torproject.org/) and the Lyrebird obfs4proxy.
 
 ## Usage  🐳
 
@@ -48,23 +48,21 @@ docker run -it --rm --name tor -p 9050:9050 -p 9051:9051 -v "${PWD:-.}/config:/e
 
 **Environment Variables:**
 
-- `TOR_CONTROL_ADDR` - Address of Tor Control Port (default: "127.0.0.1:9051")
-  - Default connects to Tor instance within the same container
-  - For external Tor server: `TOR_CONTROL_ADDR=192.168.1.100:9051`
-  - Useful for monitoring remote relays or separate Tor containers
-
-- `TOR_CONTROL_PASSWORD` - Password for Tor control port (default: "password")
-  - The container automatically generates the required hash
+- `PASSWORD` - Password for the Tor control port (default: "password")
   - Change this for production deployments
-  - Example: `TOR_CONTROL_PASSWORD=mySecurePassword123`
+  - Example: `PASSWORD=example123`
 
+- `CHECK` - Enable health check (default: "false")
+  - Set to "true" to enable health checks
+  - Uses external servers from the Tor Project to monitor the node status
+ 
 - `DEBUG` - Enable debug output (default: "false")
   - Set to "true" for troubleshooting
   - Shows raw Tor Control Protocol responses
 
 **Custom Configuration:**
 
-The container supports custom Tor configuration via a mounted `torrc` file at `/etc/tor/torrc`, so you can provide your own  relay, exit node, or hidden service settings.
+The container supports custom Tor configuration via a mounted `torrc` file at `/etc/tor/torrc`, so you can provide your own  relay, exit node, and hidden service settings.
 
 **Example custom torrc file:**
 
