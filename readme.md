@@ -18,7 +18,7 @@ Docker container of the [Tor](https://www.torproject.org/) network proxy daemon.
 
   - Suitable for relay, exit node or hidden service modes with SOCKSv5 proxy enabled.
   - Works well as a single self-contained container or in cooperation with other containers (like nginx) for organizing complex hidden services on the Tor network.
-  - Includes (optional) healthcheck via [Onionoo](https://onionoo.torproject.org), monitoring via [Nyx](https://nyx.torproject.org/) and the Lyrebird obfs4proxy.
+  - Includes a (optional) healthcheck, monitoring via [Nyx](https://nyx.torproject.org/) and the Lyrebird obfs4proxy.
 
 ## Usage  🐳
 
@@ -54,7 +54,7 @@ docker run -it --rm --name tor -p 9050:9050 -p 9051:9051 -v "${PWD:-.}/config:/e
 
 - `CHECK` - Enable health check (default: "false")
   - Set to "true" to enable health checks
-  - Uses external servers from the Tor Project to monitor the node status
+  - Uses external servers from the Tor Project (like [https://check.torproject.org/](https://check.torproject.org/) and [Onionoo](https://onionoo.torproject.org)) to monitor the node status.
  
 - `DEBUG` - Enable debug output (default: "false")
   - Set to "true" for troubleshooting
