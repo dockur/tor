@@ -14,8 +14,8 @@ import (
 
 // Configuration loaded from environment variables. Contains defaults if none are set.
 var (
-	controlAddr     = getEnv("TOR_CONTROL_ADDR", "127.0.0.1:9051")
-	controlPassword = getEnv("TOR_CONTROL_PASSWORD", "password")
+	controlAddr     = getEnv("ADDR", "127.0.0.1:9051")
+	controlPassword = getEnv("PASSWORD", "password")
 	debugMode       = getEnv("DEBUG", "false") == "true"
 )
 
