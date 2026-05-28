@@ -35,7 +35,7 @@ if [ -s "$CONFIG" ]; then
 
 fi
 
-CONTROL=$(cat <<'EOF'
+CONTROL=$(cat <<EOF
 # Control port (required for healthcheck)
 # Binds to 127.0.0.1, accessible only within container
 ControlPort $CONTROL_PORT
