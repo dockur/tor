@@ -82,7 +82,7 @@ ExitPolicy reject *:*
 ```
 
 ## Stars 🌟
-[![Stars](https://starchart.cc/dockur/tor.svg?variant=adaptive)](https://starchart.cc/dockur/tor)
+[![Stargazers](https://raw.githubusercontent.com/star-stats/stars/refs/heads/data/charts/dockur-tor.svg)](https://github.com/dockur/tor/stargazers)
 
 [build_url]: https://github.com/dockur/tor/
 [hub_url]: https://hub.docker.com/r/dockurr/tor/
