@@ -98,9 +98,9 @@ func readEnvFile(path string) (map[string]string, error) {
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
+		line := scanner.Text()
 
-		if line == "" || strings.HasPrefix(line, "#") {
+		if strings.TrimSpace(line) == "" || strings.HasPrefix(strings.TrimSpace(line), "#") {
 			continue
 		}
 
@@ -110,7 +110,6 @@ func readEnvFile(path string) (map[string]string, error) {
 		}
 
 		key = strings.TrimSpace(key)
-		value = strings.TrimSpace(value)
 
 		if key != "" {
 			values[key] = value
