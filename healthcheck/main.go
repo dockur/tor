@@ -28,6 +28,7 @@ type Config struct {
 	ControlAddr     string
 	ControlPassword string
 	DebugMode       bool
+	ExternalCheck   bool
 }
 
 type OnionooResponse struct {
@@ -58,6 +59,7 @@ func loadConfig() Config {
 		"ADDR":     "127.0.0.1:9051",
 		"PASSWORD": "password",
 		"DEBUG":    "false",
+		"CHECK":    "false",
 	}
 
 	for key := range values {
@@ -72,14 +74,15 @@ func loadConfig() Config {
 				values[key] = value
 			}
 		}
-	} else if values["DEBUG"] == "true" {
+	} else if isEnabled(values["DEBUG"]) {
 		fmt.Fprintf(os.Stderr, "DEBUG: failed to read %s: %v\n", healthcheckEnvFile, err)
 	}
 
 	return Config{
 		ControlAddr:     values["ADDR"],
 		ControlPassword: values["PASSWORD"],
-		DebugMode:       values["DEBUG"] == "true",
+		DebugMode:       isEnabled(values["DEBUG"]),
+		ExternalCheck:   isEnabled(values["CHECK"]),
 	}
 }
 
@@ -121,6 +124,16 @@ func readEnvFile(path string) (map[string]string, error) {
 	return values, nil
 }
 
+// isEnabled returns true for the same values accepted by healthcheck.sh.
+func isEnabled(value string) bool {
+	value = strings.TrimSpace(value)
+
+	return strings.EqualFold(value, "true") ||
+		strings.HasPrefix(value, "Y") ||
+		strings.HasPrefix(value, "y") ||
+		strings.HasPrefix(value, "1")
+}
+
 func healthcheck() error {
 	if config.ControlAddr == "" {
 		return fmt.Errorf("control address is empty")
@@ -151,8 +164,8 @@ func healthcheck() error {
 		return fmt.Errorf("failed to get fingerprint: %w", err)
 	}
 
-	// Query Onionoo API when relay mode is active
-	if !strings.HasPrefix(fingerprint, "skip") {
+	// Query Onionoo API when relay mode is active and external checks are enabled
+	if config.ExternalCheck && !strings.HasPrefix(fingerprint, "skip") {
 		if err := checkOnionoo(fingerprint); err != nil {
 			return fmt.Errorf("onionoo check failed: %w", err)
 		}
