@@ -3,7 +3,9 @@
 FROM golang:alpine AS builder
 
 WORKDIR /build
+
 COPY healthcheck/main.go .
+
 RUN go build -ldflags="-s -w" -o healthcheck main.go
 
 FROM alpine:edge
@@ -14,13 +16,13 @@ RUN <<EOF
   apk update
   apk upgrade
   apk --no-cache add \
-    tor \
     bash \
-    nyx \
-    tini \
     curl \
+    lyrebird \
+    nyx \
     su-exec \
-    lyrebird
+    tini \
+    tor
 
   rm -rf /tmp/* /var/cache/apk/*
 EOF
@@ -31,12 +33,14 @@ COPY --chmod=755 --from=builder /build/healthcheck /usr/local/bin/healthcheck
 
 ENV CHECK=false
 ENV DEBUG=false
+ENV SOCKS_PORT=9050
+ENV CONTROL_PORT=9051
 ENV PASSWORD=password
 
 EXPOSE 9050 9051
 
 HEALTHCHECK --interval=600s --timeout=30s --start-period=60s --start-interval=60s \
-    CMD ["/usr/local/bin/healthcheck.sh"]
+  CMD ["/usr/local/bin/healthcheck.sh"]
 
 VOLUME ["/etc/tor"]
 VOLUME ["/var/lib/tor"]
