@@ -10,8 +10,10 @@ DEFAULT_CONFIG="/run/tor/torrc-defaults"
 HEALTHCHECK_ENV="/run/tor/healthcheck.env"
 
 # Fix directory permissions
+install -d -o tor -g tor -m 0700 /var/lib/tor
 chown -R tor:tor /var/lib/tor
-chmod 0700 /var/lib/tor
+find /var/lib/tor -type d -exec chmod 0700 {} +
+find /var/lib/tor -type f -exec chmod 0600 {} +
 
 mkdir -p /run/tor
 chown tor:tor /run/tor
