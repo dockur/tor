@@ -31,14 +31,13 @@ services:
     container_name: tor
     ports:
       - 9050:9050
-      - 9051:9051
     restart: always
 ```
 
 ##### Docker CLI:
 
 ```shell
-docker run -it --rm --name tor -p 9050:9050 -p 9051:9051 docker.io/dockurr/tor
+docker run -it --rm --name tor -p 9050:9050 docker.io/dockurr/tor
 ```
 
 ## Configuration 🔧
