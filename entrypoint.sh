@@ -20,7 +20,6 @@ chmod 0755 /run/tor
 if [ -w /etc/tor ]; then
   chown -R tor:tor /etc/tor || echo "Warning: failed to chown /etc/tor" >&2
   chmod 0755 /etc/tor || echo "Warning: failed to chmod /etc/tor" >&2
-  find /etc/tor -type f -exec chmod 0644 {} + || echo "Warning: failed to chmod files in /etc/tor" >&2
 else
   echo "Warning: /etc/tor is not writable, leaving permissions unchanged" >&2
 fi
@@ -44,6 +43,8 @@ if [ -s "$CONFIG" ]; then
 fi
 
 ADDR="127.0.0.1:$CONTROL_PORT"
+HEALTHCHECK_SOCKS_PORT="$SOCKS_PORT"
+SOCKS_CONFIG="SocksPort 0.0.0.0:$SOCKS_PORT"
 
 # Docker healthcheck defaults
 CONTROL=$(cat <<EOF
@@ -56,11 +57,11 @@ EOF
 )
 
 # Let the user's torrc override the SOCKS port used by the healthcheck.
+# If the user supplied any SocksPort, do not also add our default SocksPort.
 if [ -s "$CONFIG" ]; then
 
   socks_value=""
 
-  # Prefer the first usable TCP SocksPort when multiple are configured.
   while IFS= read -r line; do
 
     value=$(echo "$line" | sed -E 's/^[[:space:]]*SocksPort[[:space:]]+//; s/[[:space:]].*$//')
@@ -83,15 +84,17 @@ if [ -s "$CONFIG" ]; then
 
   if [ -n "$socks_value" ]; then
 
+    SOCKS_CONFIG=""
+
     case "$socks_value" in
       0|auto|unix:*)
-        SOCKS_PORT=""
+        HEALTHCHECK_SOCKS_PORT=""
         ;;
       *:*)
-        SOCKS_PORT="${socks_value##*:}"
+        HEALTHCHECK_SOCKS_PORT="${socks_value##*:}"
         ;;
       *)
-        SOCKS_PORT="$socks_value"
+        HEALTHCHECK_SOCKS_PORT="$socks_value"
         ;;
     esac
 
@@ -105,7 +108,6 @@ if [ -s "$CONFIG" ]; then
 
   control_value=""
 
-  # Prefer the first usable TCP ControlPort when multiple are configured.
   while IFS= read -r line; do
 
     value=$(echo "$line" | sed -E 's/^[[:space:]]*ControlPort[[:space:]]+//; s/[[:space:]].*$//')
@@ -146,7 +148,7 @@ if [ -s "$CONFIG" ]; then
     esac
 
     if grep -Eq '^[[:space:]]*CookieAuthentication[[:space:]]+1([[:space:]]|$)' "$CONFIG"; then
-      echo "Warning: CookieAuthentication is enabled, but this healthcheck uses password authentication" >&2
+      echo "Warning: CookieAuthentication is enabled without guaranteed password authentication; Docker healthcheck may fail." >&2
     fi
 
     if ! grep -Eq '^[[:space:]]*(HashedControlPassword|CookieAuthentication)[[:space:]]+' "$CONFIG"; then
@@ -167,7 +169,7 @@ Log notice stdout
 DataDirectory /var/lib/tor
 
 # SOCKS proxy
-SocksPort 0.0.0.0:$SOCKS_PORT
+$SOCKS_CONFIG
 
 $CONTROL
 EOF
@@ -182,8 +184,8 @@ cat > "$HEALTHCHECK_ENV" <<EOF
 ADDR=$ADDR
 PASSWORD=$PASSWORD
 CHECK=${CHECK:-false}
-SOCKS_PORT=$SOCKS_PORT
 CONTROL_PORT=$CONTROL_PORT
+SOCKS_PORT=$HEALTHCHECK_SOCKS_PORT
 EOF
 
 chown tor:tor "$HEALTHCHECK_ENV"
