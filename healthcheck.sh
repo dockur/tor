@@ -5,11 +5,6 @@ set -Eeuo pipefail
 : "${SOCKS_PORT:="9050"}"
 : "${HEALTHCHECK_ENV:="/run/tor/healthcheck.env"}"
 
-if [[ "${CHECK,,}" != "true" && "$CHECK" != [Yy1]* ]]; then
-  echo "Healthcheck disabled, set the CHECK=true variable to enable."
-  exit 0
-fi
-
 # Load the SOCKS port resolved by the entrypoint.
 # Do not source this file, because it may contain unescaped values like PASSWORD.
 if [ -f "$HEALTHCHECK_ENV" ]; then
@@ -22,13 +17,20 @@ if [ -f "$HEALTHCHECK_ENV" ]; then
   done < "$HEALTHCHECK_ENV"
 fi
 
+# Always run the local control-port healthcheck.
+{ /usr/local/bin/healthcheck; rc=$?; } || :
+(( rc != 0 )) && exit "$rc"
+
+# Only run the external Tor exit check when CHECK is explicitly enabled.
+if [[ "${CHECK,,}" != "true" && "$CHECK" != [Yy1]* ]]; then
+  echo "Local healthcheck OK, external check disabled."
+  exit 0
+fi
+
 if [ -z "$SOCKS_PORT" ]; then
   echo "Healthcheck failed: SOCKS_PORT is empty or unsupported by this healthcheck."
   exit 1
 fi
-
-{ /usr/local/bin/healthcheck; rc=$?; } || :
-(( rc != 0 )) && exit "$rc"
 
 resp=$(
   curl \
