@@ -64,7 +64,7 @@ if [ -s "$CONFIG" ]; then
 
   while IFS= read -r line; do
 
-    value=$(echo "$line" | sed -E 's/^[[:space:]]*SocksPort[[:space:]]+//; s/[[:space:]].*$//')
+    value=$(echo "$line" | sed -E 's/^[[:space:]]*[^[:space:]]+[[:space:]]+//; s/[[:space:]].*$//')
 
     case "$value" in
       ""|0|auto|unix:*)
@@ -80,7 +80,7 @@ if [ -s "$CONFIG" ]; then
         ;;
     esac
 
-  done < <(grep -E '^[[:space:]]*SocksPort[[:space:]]+' "$CONFIG" || :)
+  done < <(grep -Ei '^[[:space:]]*SocksPort[[:space:]]+' "$CONFIG" || :)
 
   if [ -n "$socks_value" ]; then
 
@@ -103,14 +103,14 @@ if [ -s "$CONFIG" ]; then
 fi
 
 # Let the user's torrc override the control port, but still keep authentication
-# unless they already configured control authentication themselves.
+# unless they already configured password authentication themselves.
 if [ -s "$CONFIG" ]; then
 
   control_value=""
 
   while IFS= read -r line; do
 
-    value=$(echo "$line" | sed -E 's/^[[:space:]]*ControlPort[[:space:]]+//; s/[[:space:]].*$//')
+    value=$(echo "$line" | sed -E 's/^[[:space:]]*[^[:space:]]+[[:space:]]+//; s/[[:space:]].*$//')
 
     case "$value" in
       ""|0|auto|unix:*)
@@ -126,7 +126,7 @@ if [ -s "$CONFIG" ]; then
         ;;
     esac
 
-  done < <(grep -E '^[[:space:]]*ControlPort[[:space:]]+' "$CONFIG" || :)
+  done < <(grep -Ei '^[[:space:]]*ControlPort[[:space:]]+' "$CONFIG" || :)
 
   if [ -n "$control_value" ]; then
 
@@ -147,11 +147,11 @@ if [ -s "$CONFIG" ]; then
         ;;
     esac
 
-    if grep -Eq '^[[:space:]]*CookieAuthentication[[:space:]]+1([[:space:]]|$)' "$CONFIG"; then
-      echo "Warning: CookieAuthentication is enabled without guaranteed password authentication; Docker healthcheck may fail." >&2
+    if grep -Eiq '^[[:space:]]*CookieAuthentication[[:space:]]+1([[:space:]]|$)' "$CONFIG"; then
+      echo "Warning: CookieAuthentication is enabled; Docker healthcheck uses password authentication." >&2
     fi
 
-    if ! grep -Eq '^[[:space:]]*(HashedControlPassword|CookieAuthentication)[[:space:]]+' "$CONFIG"; then
+    if ! grep -Eiq '^[[:space:]]*HashedControlPassword[[:space:]]+' "$CONFIG"; then
       CONTROL="HashedControlPassword $HASHED_PASSWORD"
     fi
 
@@ -192,9 +192,9 @@ chown tor:tor "$HEALTHCHECK_ENV"
 chmod 0600 "$HEALTHCHECK_ENV"
 
 # If the user supplied a torrc, load our file as defaults so their config wins.
-# If no torrc exists, use our file as the main config to avoid relying on Tor's.
+# If no torrc exists, use our file as the main config to avoid relying on Tor's defaults.
 if [ -s "$CONFIG" ]; then
-  exec su-exec tor tor --defaults-torrc "$DEFAULT_CONFIG" "$@"
+  exec su-exec tor tor --defaults-torrc "$DEFAULT_CONFIG"
 else
-  exec su-exec tor tor -f "$DEFAULT_CONFIG" "$@"
+  exec su-exec tor tor -f "$DEFAULT_CONFIG"
 fi
