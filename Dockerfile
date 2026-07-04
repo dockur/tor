@@ -8,18 +8,22 @@ RUN go build -ldflags="-s -w" -o healthcheck main.go
 
 FROM alpine:edge
 
-RUN set -eu && \
-    apk update && \
-    apk upgrade && \
-    apk --no-cache add \
+RUN <<EOF
+  set -eu
+
+  apk update
+  apk upgrade
+  apk --no-cache add \
     tor \
     bash \
     nyx \
     tini \
     curl \
     su-exec \
-    lyrebird && \
-    rm -rf /tmp/* /var/cache/apk/*
+    lyrebird
+
+  rm -rf /tmp/* /var/cache/apk/*
+EOF
 
 COPY --chmod=755 entrypoint.sh /usr/local/bin/
 COPY --chmod=755 healthcheck.sh /usr/local/bin/
