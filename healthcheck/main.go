@@ -12,24 +12,22 @@ import (
 	"time"
 )
 
-// Configuration loaded from environment variables. Contains defaults if none are set.
-var (
-	controlAddr     = getEnv("ADDR", "127.0.0.1:9051")
-	controlPassword = getEnv("PASSWORD", "password")
-	debugMode       = getEnv("DEBUG", "false") == "true"
-)
-
 const (
-	onionooAPIURL = "https://onionoo.torproject.org/details?lookup=%s"
-	timeout       = 10 * time.Second
+	healthcheckEnvFile = "/run/tor/healthcheck.env"
+	onionooAPIURL      = "https://onionoo.torproject.org/details?lookup=%s"
+	timeout            = 10 * time.Second
 )
 
-// getEnv reads an environment variable or returns a default value
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
+// Configuration loaded from /run/tor/healthcheck.env and environment variables.
+// Contains defaults if none are set.
+var (
+	config = loadConfig()
+)
+
+type Config struct {
+	ControlAddr     string
+	ControlPassword string
+	DebugMode       bool
 }
 
 type OnionooResponse struct {
@@ -49,22 +47,97 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Healthcheck failed: %v\n", err)
 		os.Exit(1)
 	}
+
 	os.Exit(0)
 }
 
+// loadConfig starts with environment/default values, then lets
+// healthcheck.env override them with the values resolved by the entrypoint.
+func loadConfig() Config {
+	values := map[string]string{
+		"ADDR":     "127.0.0.1:9051",
+		"PASSWORD": "password",
+		"DEBUG":    "false",
+	}
+
+	for key := range values {
+		if value := os.Getenv(key); value != "" {
+			values[key] = value
+		}
+	}
+
+	if fileValues, err := readEnvFile(healthcheckEnvFile); err == nil {
+		for key, value := range fileValues {
+			if value != "" {
+				values[key] = value
+			}
+		}
+	} else if values["DEBUG"] == "true" {
+		fmt.Fprintf(os.Stderr, "DEBUG: failed to read %s: %v\n", healthcheckEnvFile, err)
+	}
+
+	return Config{
+		ControlAddr:     values["ADDR"],
+		ControlPassword: values["PASSWORD"],
+		DebugMode:       values["DEBUG"] == "true",
+	}
+}
+
+// readEnvFile reads a simple KEY=value environment file.
+func readEnvFile(path string) (map[string]string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	values := make(map[string]string)
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		key, value, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+
+		key = strings.TrimSpace(key)
+		value = strings.TrimSpace(value)
+
+		if key != "" {
+			values[key] = value
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return values, nil
+}
+
 func healthcheck() error {
+	if config.ControlAddr == "" {
+		return fmt.Errorf("control address is empty")
+	}
+
 	// Connect to Tor Control Port
-	conn, err := net.DialTimeout("tcp", controlAddr, timeout)
+	conn, err := net.DialTimeout("tcp", config.ControlAddr, timeout)
 	if err != nil {
 		return fmt.Errorf("failed to connect to control port: %w", err)
 	}
 	defer conn.Close()
 
 	// Set a deadline for the connection
-	err = conn.SetDeadline(time.Now().Add(timeout))
-	if err != nil {
+	if err := conn.SetDeadline(time.Now().Add(timeout)); err != nil {
 		return err
 	}
+
 	reader := bufio.NewReader(conn)
 
 	// Authenticate with Tor Control Port
@@ -78,22 +151,22 @@ func healthcheck() error {
 		return fmt.Errorf("failed to get fingerprint: %w", err)
 	}
 
-	// Query OnionooAPI when relay mode is active
+	// Query Onionoo API when relay mode is active
 	if !strings.HasPrefix(fingerprint, "skip") {
-    	// Query Onionoo API
-    	if err := checkOnionoo(fingerprint); err != nil {
-	    	return fmt.Errorf("onionoo check failed: %w", err)
-    	}
-    }
-	
+		if err := checkOnionoo(fingerprint); err != nil {
+			return fmt.Errorf("onionoo check failed: %w", err)
+		}
+	}
+
 	return nil
 }
 
 func authenticate(conn net.Conn, reader *bufio.Reader) error {
-	// Send AUTHENTICATE command with the plaintext password
-	// Tor performs S2K hashing internally and validates against HashedControlPassword which is set in torrc
-	// To set HashedControlPassword, run `tor --hash-password <password>` and put the result in torrc
-	cmd := fmt.Sprintf("AUTHENTICATE \"%s\"\r\n", controlPassword)
+	// Send AUTHENTICATE command with the plaintext password.
+	// Tor performs S2K hashing internally and validates against HashedControlPassword,
+	// which is set in torrc. To set HashedControlPassword manually, run:
+	// `tor --hash-password <password>` and put the result in torrc.
+	cmd := fmt.Sprintf("AUTHENTICATE \"%s\"\r\n", escapeControlString(config.ControlPassword))
 
 	if _, err := conn.Write([]byte(cmd)); err != nil {
 		return err
@@ -111,6 +184,14 @@ func authenticate(conn net.Conn, reader *bufio.Reader) error {
 	return nil
 }
 
+// escapeControlString escapes backslashes and quotes for Tor's quoted
+// control-protocol string syntax.
+func escapeControlString(value string) string {
+	value = strings.ReplaceAll(value, "\\", "\\\\")
+	value = strings.ReplaceAll(value, "\"", "\\\"")
+	return value
+}
+
 func getFingerprint(conn net.Conn, reader *bufio.Reader) (string, error) {
 	if _, err := conn.Write([]byte("GETINFO fingerprint\r\n")); err != nil {
 		return "", err
@@ -118,6 +199,7 @@ func getFingerprint(conn net.Conn, reader *bufio.Reader) (string, error) {
 
 	// Parse response
 	var fingerprint string
+
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
@@ -127,31 +209,35 @@ func getFingerprint(conn net.Conn, reader *bufio.Reader) (string, error) {
 		line = strings.TrimSpace(line)
 
 		// Debug: Show raw response from Tor Control Protocol
-		if debugMode {
+		if config.DebugMode {
 			fmt.Fprintf(os.Stderr, "DEBUG: Tor response: %q\n", line)
 		}
 
-		// Looks for the Fingerprint line
-		if strings.HasPrefix(line, "250-fingerprint=") {
+		// Look for the Fingerprint line
+		switch {
+		case strings.HasPrefix(line, "250-fingerprint="):
 			fingerprint = strings.TrimPrefix(line, "250-fingerprint=")
-			// Removes spaces to be compatible with Onionoo API
+			// Remove spaces to be compatible with Onionoo API
 			fingerprint = strings.ReplaceAll(fingerprint, " ", "")
 			// Convert to uppercase for Onionoo API
 			fingerprint = strings.ToUpper(fingerprint)
-		} else if strings.HasPrefix(line, "250 ") {
-			// End of response
-			break
-		} else if strings.HasPrefix(line, "551") {
+
+		case strings.HasPrefix(line, "250 "):
+			// No fingerprint usually means Tor is running as a client, not a relay
+			if fingerprint == "" {
+				return "skip", nil
+			}
+
+			return validateFingerprint(fingerprint)
+
+		case strings.HasPrefix(line, "551"):
 			// Not running as relay
 			return "skip", nil
-			// return "", fmt.Errorf("not running as a relay: %s", line)
 		}
 	}
+}
 
-	if fingerprint == "" {
-		return "", fmt.Errorf("fingerprint not found in response")
-	}
-
+func validateFingerprint(fingerprint string) (string, error) {
 	// Validation: must be 40 characters long
 	if len(fingerprint) != 40 {
 		return "", fmt.Errorf("invalid fingerprint length: got %d chars, expected 40", len(fingerprint))
@@ -160,7 +246,7 @@ func getFingerprint(conn net.Conn, reader *bufio.Reader) (string, error) {
 	// Validation: must only contain hex characters
 	for _, char := range fingerprint {
 		if !((char >= '0' && char <= '9') || (char >= 'A' && char <= 'F')) {
-			return "", fmt.Errorf("invalid fingerprint: contains non-hex character '%char'", char)
+			return "", fmt.Errorf("invalid fingerprint: contains non-hex character %q", char)
 		}
 	}
 
@@ -193,7 +279,7 @@ func checkOnionoo(fingerprint string) error {
 		return fmt.Errorf("failed to parse onionoo response: %w", err)
 	}
 
-	// Checks if the relay is, consensus-wise, running
+	// Check if the relay is, consensus-wise, running
 	if len(onionoo.Relays) == 0 {
 		return fmt.Errorf("relay %s not found in onionoo database (new relays may take hours to appear)", fingerprint)
 	}
