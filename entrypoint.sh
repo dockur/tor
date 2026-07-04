@@ -8,6 +8,7 @@ SOCKS_PORT="${SOCKS_PORT:-9050}"
 CONTROL_PORT="${CONTROL_PORT:-9051}"
 DEFAULT_CONFIG="/run/tor/torrc-defaults"
 HEALTHCHECK_ENV="/run/tor/healthcheck.env"
+HTTPS_PROXY_PORT="${HTTPS_PROXY_PORT:-8118}"
 
 # Fix directory permissions
 install -d -o tor -g tor -m 0700 /var/lib/tor
@@ -47,6 +48,7 @@ fi
 ADDR="127.0.0.1:$CONTROL_PORT"
 HEALTHCHECK_SOCKS_PORT="$SOCKS_PORT"
 SOCKS_CONFIG="SocksPort 0.0.0.0:$SOCKS_PORT"
+HTTPS_PROXY_CONFIG="HTTPTunnelPort 0.0.0.0:$HTTPS_PROXY_PORT"
 
 # Docker healthcheck defaults
 CONTROL=$(cat <<EOF
@@ -100,6 +102,37 @@ if [ -s "$CONFIG" ]; then
         ;;
     esac
 
+  fi
+
+fi
+
+# If the user supplied any HTTPTunnelPort, do not also add our default HTTPS proxy.
+if [ -s "$CONFIG" ]; then
+
+  https_proxy_value=""
+
+  while IFS= read -r line; do
+
+    value=$(echo "$line" | sed -E 's/^[[:space:]]*[^[:space:]]+[[:space:]]+//; s/[[:space:]].*$//')
+
+    case "$value" in
+      ""|0|auto|unix:*)
+        [ -z "$https_proxy_value" ] && https_proxy_value="$value"
+        ;;
+      *:*)
+        https_proxy_value="$value"
+        break
+        ;;
+      *)
+        https_proxy_value="$value"
+        break
+        ;;
+    esac
+
+  done < <(grep -Ei '^[[:space:]]*HTTPTunnelPort[[:space:]]+' "$CONFIG" || :)
+
+  if [ -n "$https_proxy_value" ]; then
+    HTTPS_PROXY_CONFIG=""
   fi
 
 fi
@@ -173,6 +206,9 @@ DataDirectory /var/lib/tor
 # SOCKS proxy
 $SOCKS_CONFIG
 
+# HTTPS proxy
+$HTTPS_PROXY_CONFIG
+
 $CONTROL
 EOF
 
@@ -188,6 +224,7 @@ PASSWORD=$PASSWORD
 CHECK=${CHECK:-false}
 CONTROL_PORT=$CONTROL_PORT
 SOCKS_PORT=$HEALTHCHECK_SOCKS_PORT
+HTTPS_PROXY_PORT=$HTTPS_PROXY_PORT
 EOF
 
 chown tor:tor "$HEALTHCHECK_ENV"
