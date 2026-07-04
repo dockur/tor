@@ -23,12 +23,12 @@ fi
 
 # Only run the external Tor exit check when CHECK is explicitly enabled.
 if [[ "${CHECK,,}" != "true" && "$CHECK" != [Yy1]* ]]; then
-  echo "Local healthcheck OK, external check disabled."
+  echo "External healthcheck disabled, set CHECK=Y to enable."
   exit 0
 fi
 
 if [ -z "$SOCKS_PORT" ]; then
-  echo "Healthcheck failed: SOCKS_PORT is empty or unsupported by this healthcheck."
+  echo "Healthcheck failed: SOCKS_PORT is empty or unsupported."
   exit 1
 fi
 
