@@ -24,7 +24,22 @@ RUN <<EOF
     su-exec \
     tini \
     tor
+RUN <<EOF
+  set -eu
 
+  apk update
+  apk upgrade
+  apk --no-cache add \
+    bash \
+    ca-certificates \
+    curl \
+    lyrebird \
+    nyx \
+    su-exec \
+    tini \
+    tor
+
+  rm -f /etc/tor/torrc
   rm -rf /tmp/* /var/cache/apk/*
 EOF
 
