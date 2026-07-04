@@ -2,22 +2,30 @@
 set -Eeuo pipefail
 
 # Set defaults
-CONTROL_PORT=9051
 CONFIG="/etc/tor/torrc"
-DEFAULT_CONFIG="/tmp/torrc-defaults"
-
-# Get control password from environment (default: "password")
 PASSWORD="${PASSWORD:-password}"
+SOCKS_PORT="${SOCKS_PORT:-9050}"
+CONTROL_PORT="${CONTROL_PORT:-9051}"
+DEFAULT_CONFIG="/run/tor/torrc-defaults"
+HEALTHCHECK_ENV="/run/tor/healthcheck.env"
 
 # Fix directory permissions
-chown -R tor:tor /etc/tor || echo "Warning: failed to chown /etc/tor" >&2
-chmod 0755 /etc/tor || echo "Warning: failed to chmod /etc/tor" >&2
+chown -R tor:tor /var/lib/tor
+chmod 0700 /var/lib/tor
 
-chown -R tor:tor /var/lib/tor || echo "Warning: failed to chown /var/lib/tor" >&2
-chmod 0700 /var/lib/tor || echo "Warning: failed to chmod /var/lib/tor" >&2
+mkdir -p /run/tor
+chown tor:tor /run/tor
+chmod 0755 /run/tor
 
-# Generate hashed password using Tor
-# tor --hash-password outputs the hash on the last line
+if [ -w /etc/tor ]; then
+  chown -R tor:tor /etc/tor || echo "Warning: failed to chown /etc/tor" >&2
+  chmod 0755 /etc/tor || echo "Warning: failed to chmod /etc/tor" >&2
+  find /etc/tor -type f -exec chmod 0644 {} + || echo "Warning: failed to chmod files in /etc/tor" >&2
+else
+  echo "Warning: /etc/tor is not writable, leaving permissions unchanged" >&2
+fi
+
+# Generate hashed password
 if ! HASHED_PASSWORD=$(tor --hash-password "$PASSWORD" | tail -n 1); then
   echo "ERROR: Failed to generate password hash" >&2
   exit 1
@@ -30,10 +38,12 @@ fi
 
 # Prevent port conflict with an existing SOCKS port in the user's torrc
 if [ -s "$CONFIG" ]; then
-  if grep -Eiq '^[[:space:]]*SocksPort[[:space:]]+([^[:space:]]*:)?9051([[:space:]]|$)' "$CONFIG"; then
+  if grep -Eiq "^[[:space:]]*SocksPort[[:space:]]+([^[:space:]]*:)?${CONTROL_PORT}([[:space:]]|$)" "$CONFIG"; then
     CONTROL_PORT=9951
   fi
 fi
+
+ADDR="127.0.0.1:$CONTROL_PORT"
 
 # Docker healthcheck defaults
 CONTROL=$(cat <<EOF
@@ -49,26 +59,59 @@ EOF
 # unless they already configured control authentication themselves.
 if [ -s "$CONFIG" ]; then
 
-  if grep -Eq '^[[:space:]]*ControlPort[[:space:]]+' "$CONFIG"; then
-    line=$(grep -E '^[[:space:]]*ControlPort[[:space:]]+' "$CONFIG" | head -n 1)
-    CONTROL_PORT=$(echo "$line" | sed -E 's/^[[:space:]]*ControlPort[[:space:]]+//; s/[[:space:]].*$//')
+  control_value=""
+
+  # Prefer the first usable TCP ControlPort when multiple are configured.
+  while IFS= read -r line; do
+
+    value=$(echo "$line" | sed -E 's/^[[:space:]]*ControlPort[[:space:]]+//; s/[[:space:]].*$//')
+
+    case "$value" in
+      ""|0|auto|unix:*)
+        [ -z "$control_value" ] && control_value="$value"
+        ;;
+      *:*)
+        control_value="$value"
+        break
+        ;;
+      *)
+        control_value="$value"
+        break
+        ;;
+    esac
+
+  done < <(grep -E '^[[:space:]]*ControlPort[[:space:]]+' "$CONFIG" || :)
+
+  if [ -n "$control_value" ]; then
 
     CONTROL=""
+
+    case "$control_value" in
+      0|auto|unix:*)
+        ADDR=""
+        CONTROL_PORT=""
+        ;;
+      *:*)
+        ADDR="$control_value"
+        CONTROL_PORT="${control_value##*:}"
+        ;;
+      *)
+        CONTROL_PORT="$control_value"
+        ADDR="127.0.0.1:$CONTROL_PORT"
+        ;;
+    esac
 
     if ! grep -Eq '^[[:space:]]*(HashedControlPassword|CookieAuthentication)[[:space:]]+' "$CONFIG"; then
       CONTROL="HashedControlPassword $HASHED_PASSWORD"
     fi
+
   fi
 
 fi
 
-ADDR="127.0.0.1:$CONTROL_PORT"
-export ADDR
-export CONTROL_PORT
-
 # Create defaults file with Docker-safe settings.
-# When a user torrc exists, these are only defaults and can be overridden.
 # When no user torrc exists, this file is used as the main config.
+# When a user torrc exists, these are only defaults and can be overridden.
 cat > "$DEFAULT_CONFIG" <<EOF
 # Default settings for Tor container
 
@@ -77,17 +120,29 @@ Log notice stdout
 DataDirectory /var/lib/tor
 
 # SOCKS proxy
-SocksPort 0.0.0.0:9050
+SocksPort 0.0.0.0:$SOCKS_PORT
 
 $CONTROL
 EOF
 
-chown tor:tor "$DEFAULT_CONFIG" || echo "Warning: failed to chown $DEFAULT_CONFIG" >&2
-chmod 0644 "$DEFAULT_CONFIG" || echo "Warning: failed to chmod $DEFAULT_CONFIG" >&2
+chown tor:tor "$DEFAULT_CONFIG"
+chmod 0644 "$DEFAULT_CONFIG"
+
+# Write resolved healthcheck configuration.
+# Docker HEALTHCHECK processes do not inherit variables exported by this script,
+# so the healthcheck binary reads this file instead.
+cat > "$HEALTHCHECK_ENV" <<EOF
+ADDR=$ADDR
+PASSWORD=$PASSWORD
+SOCKS_PORT=$SOCKS_PORT
+CONTROL_PORT=$CONTROL_PORT
+EOF
+
+chown tor:tor "$HEALTHCHECK_ENV"
+chmod 0600 "$HEALTHCHECK_ENV"
 
 # If the user supplied a torrc, load our file as defaults so their config wins.
-# If no torrc exists, use our file as the main config to avoid relying on Tor's
-# compiled or distro-specific defaults.
+# If no torrc exists, use our file as the main config to avoid relying on Tor's.
 if [ -s "$CONFIG" ]; then
   exec su-exec tor tor --defaults-torrc "$DEFAULT_CONFIG" "$@"
 else
