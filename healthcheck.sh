@@ -10,14 +10,21 @@ if [[ "${CHECK,,}" != "true" && "$CHECK" != [Yy1]* ]]; then
   exit 0
 fi
 
-# Load runtime values resolved by the entrypoint.
-# This keeps the shell healthcheck in sync with the generated Tor config.
+# Load the SOCKS port resolved by the entrypoint.
+# Do not source this file, because it may contain unescaped values like PASSWORD.
 if [ -f "$HEALTHCHECK_ENV" ]; then
-  while IFS='=' read -r key value; do
+  while IFS="=" read -r key value; do
     case "$key" in
-      SOCKS_PORT) SOCKS_PORT="$value" ;;
+      SOCKS_PORT)
+        SOCKS_PORT="$value"
+        ;;
     esac
   done < "$HEALTHCHECK_ENV"
+fi
+
+if [ -z "$SOCKS_PORT" ]; then
+  echo "Healthcheck failed: SOCKS_PORT is empty or unsupported by this healthcheck."
+  exit 1
 fi
 
 { /usr/local/bin/healthcheck; rc=$?; } || :
@@ -30,7 +37,7 @@ resp=$(
     --fail \
     --max-time 15 \
     -x "socks5h://127.0.0.1:$SOCKS_PORT" \
-    'https://check.torproject.org/api/ip'
+    "https://check.torproject.org/api/ip"
 )
 
 if ! grep -qm1 -E '"IsTor"\s*:\s*true' <<< "$resp"; then
