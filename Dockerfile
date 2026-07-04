@@ -17,6 +17,7 @@ RUN <<EOF
   apk upgrade
   apk --no-cache add \
     bash \
+    ca-certificates \
     curl \
     lyrebird \
     nyx \
@@ -37,12 +38,11 @@ ENV SOCKS_PORT=9050
 ENV CONTROL_PORT=9051
 ENV PASSWORD=password
 
-EXPOSE 9050 9051
+EXPOSE 9050
 
 HEALTHCHECK --interval=600s --timeout=30s --start-period=60s --start-interval=60s \
   CMD ["/usr/local/bin/healthcheck.sh"]
 
-VOLUME ["/etc/tor"]
 VOLUME ["/var/lib/tor"]
 
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/entrypoint.sh"]
