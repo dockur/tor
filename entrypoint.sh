@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -Eeuo pipefail
 
 # Fix directory permissions
 chown -R tor:tor /etc/tor || :
@@ -16,7 +16,10 @@ PASSWORD="${PASSWORD:-password}"
 
 # Generate hashed password using Tor
 # tor --hash-password outputs the hash on the last line
-HASHED_PASSWORD=$(tor --hash-password "$PASSWORD" | tail -n 1)
+if ! HASHED_PASSWORD=$(tor --hash-password "$PASSWORD" | tail -n 1); then
+  echo "ERROR: Failed to generate password hash" >&2
+  exit 1
+fi
 
 if [ -z "$HASHED_PASSWORD" ]; then
     echo "ERROR: Failed to generate password hash" >&2
