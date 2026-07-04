@@ -13,10 +13,11 @@ fi
 # Load runtime values resolved by the entrypoint.
 # This keeps the shell healthcheck in sync with the generated Tor config.
 if [ -f "$HEALTHCHECK_ENV" ]; then
-  set -a
-  # shellcheck disable=SC1090
-  source "$HEALTHCHECK_ENV"
-  set +a
+  while IFS='=' read -r key value; do
+    case "$key" in
+      SOCKS_PORT) SOCKS_PORT="$value" ;;
+    esac
+  done < "$HEALTHCHECK_ENV"
 fi
 
 { /usr/local/bin/healthcheck; rc=$?; } || :
