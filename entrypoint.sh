@@ -49,7 +49,7 @@ SOCKS_CONFIG="SocksPort 0.0.0.0:$SOCKS_PORT"
 # Docker healthcheck defaults
 CONTROL=$(cat <<EOF
 # Control port for healthcheck
-ControlPort 0.0.0.0:$CONTROL_PORT
+ControlPort 127.0.0.1:$CONTROL_PORT
 
 # Control port password, generated from PASSWORD environment variable
 HashedControlPassword $HASHED_PASSWORD
