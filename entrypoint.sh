@@ -55,6 +55,50 @@ HashedControlPassword $HASHED_PASSWORD
 EOF
 )
 
+# Let the user's torrc override the SOCKS port used by the healthcheck.
+if [ -s "$CONFIG" ]; then
+
+  socks_value=""
+
+  # Prefer the first usable TCP SocksPort when multiple are configured.
+  while IFS= read -r line; do
+
+    value=$(echo "$line" | sed -E 's/^[[:space:]]*SocksPort[[:space:]]+//; s/[[:space:]].*$//')
+
+    case "$value" in
+      ""|0|auto|unix:*)
+        [ -z "$socks_value" ] && socks_value="$value"
+        ;;
+      *:*)
+        socks_value="$value"
+        break
+        ;;
+      *)
+        socks_value="$value"
+        break
+        ;;
+    esac
+
+  done < <(grep -E '^[[:space:]]*SocksPort[[:space:]]+' "$CONFIG" || :)
+
+  if [ -n "$socks_value" ]; then
+
+    case "$socks_value" in
+      0|auto|unix:*)
+        SOCKS_PORT=""
+        ;;
+      *:*)
+        SOCKS_PORT="${socks_value##*:}"
+        ;;
+      *)
+        SOCKS_PORT="$socks_value"
+        ;;
+    esac
+
+  fi
+
+fi
+
 # Let the user's torrc override the control port, but still keep authentication
 # unless they already configured control authentication themselves.
 if [ -s "$CONFIG" ]; then
@@ -100,6 +144,10 @@ if [ -s "$CONFIG" ]; then
         ADDR="127.0.0.1:$CONTROL_PORT"
         ;;
     esac
+
+    if grep -Eq '^[[:space:]]*CookieAuthentication[[:space:]]+1([[:space:]]|$)' "$CONFIG"; then
+      echo "Warning: CookieAuthentication is enabled, but this healthcheck uses password authentication" >&2
+    fi
 
     if ! grep -Eq '^[[:space:]]*(HashedControlPassword|CookieAuthentication)[[:space:]]+' "$CONFIG"; then
       CONTROL="HashedControlPassword $HASHED_PASSWORD"
