@@ -154,7 +154,6 @@ if [ -s "$CONFIG" ]; then
     fi
 
   fi
-
 fi
 
 # Create defaults file with Docker-safe settings.
@@ -182,6 +181,7 @@ chmod 0644 "$DEFAULT_CONFIG"
 cat > "$HEALTHCHECK_ENV" <<EOF
 ADDR=$ADDR
 PASSWORD=$PASSWORD
+CHECK=${CHECK:-false}
 SOCKS_PORT=$SOCKS_PORT
 CONTROL_PORT=$CONTROL_PORT
 EOF
