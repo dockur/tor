@@ -16,8 +16,9 @@ Docker container of the [Tor](https://www.torproject.org/) network proxy daemon.
 
 ## Features ✨
 
-- Suitable for relay, exit node or hidden service modes with SOCKSv5 and HTTPS proxy support.
-- Works well as a single self-contained container or in cooperation with other containers, like nginx, for organizing complex hidden services on the Tor network.
+- Provides SOCKSv5 and HTTPS proxy access.
+- Supports relay, exit node, bridge, and hidden service modes through custom  configuration.
+- Can run standalone or alongside other containers, like nginx, for hidden services on the Tor network.
 - Includes an extensive healthcheck, plus monitoring via [Nyx](https://nyx.torproject.org/) and the Lyrebird obfs4proxy.
 
 ## Usage 🐳
@@ -48,15 +49,12 @@ The SOCKSv5 proxy is available on port `9050`, and the HTTPS proxy is available 
 **Environment variables:**
 
 - `PASSWORD` - Password for the Tor control port (default: "password")
-  - Change this for production deployments.
-  - Example: `PASSWORD=example123`
+  - Only used inside the container by the healthcheck. Change it if you plan to expose the control port (9051).
 
 - `CHECK` - Enable external health checks (default: "false")
-  - The local control-port healthcheck always runs.
   - Set to "true" to also monitor the node status via external services like [https://check.torproject.org/](https://check.torproject.org/) and [Onionoo](https://onionoo.torproject.org).
 
 - `DEBUG` - Enable debug output (default: "false")
-  - Set to "true" for troubleshooting.
   - Shows raw Tor Control Protocol responses.
 
 **Advanced configuration:**
