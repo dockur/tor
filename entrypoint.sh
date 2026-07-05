@@ -10,48 +10,85 @@ DEFAULT_CONFIG="/run/tor/torrc-defaults"
 HEALTHCHECK_ENV="/run/tor/healthcheck.env"
 HTTPS_PROXY_PORT="${HTTPS_PROXY_PORT:-8118}"
 
-# Fix directory permissions
-install -d -o tor -g tor -m 0700 /var/lib/tor
-chown -R tor:tor /var/lib/tor
-find /var/lib/tor -type d -exec chmod 0700 {} +
-find /var/lib/tor -type f -exec chmod 0600 {} +
+fix_permissions() {
+  # Fix directory permissions
+  install -d -o tor -g tor -m 0700 /var/lib/tor
+  chown -R tor:tor /var/lib/tor
+  find /var/lib/tor -type d -exec chmod 0700 {} +
+  find /var/lib/tor -type f -exec chmod 0600 {} +
 
-mkdir -p /run/tor
-chown tor:tor /run/tor
-chmod 0755 /run/tor
+  mkdir -p /run/tor
+  chown tor:tor /run/tor
+  chmod 0755 /run/tor
 
-if [ -w /etc/tor ]; then
-  chown -R tor:tor /etc/tor || echo "Warning: failed to chown /etc/tor" >&2
-  chmod 0755 /etc/tor || echo "Warning: failed to chmod /etc/tor" >&2
-else
-  echo "Warning: /etc/tor is not writable, leaving permissions unchanged" >&2
-fi
-
-# Generate hashed password
-if ! HASHED_PASSWORD=$(tor --hash-password "$PASSWORD" | tail -n 1); then
-  echo "ERROR: Failed to generate password hash" >&2
-  exit 1
-fi
-
-if [ -z "$HASHED_PASSWORD" ]; then
-  echo "ERROR: Generated password hash is empty" >&2
-  exit 1
-fi
-
-# Prevent port conflict with an existing SOCKS port in the user's torrc
-if [ -s "$CONFIG" ]; then
-  if grep -Eiq "^[[:space:]]*SocksPort[[:space:]]+([^[:space:]]*:)?${CONTROL_PORT}([[:space:]]|$)" "$CONFIG"; then
-    CONTROL_PORT=9951
+  if [ -w /etc/tor ]; then
+    chown -R tor:tor /etc/tor || echo "Warning: failed to chown /etc/tor" >&2
+    chmod 0755 /etc/tor || echo "Warning: failed to chmod /etc/tor" >&2
+  else
+    echo "Warning: /etc/tor is not writable, leaving permissions unchanged" >&2
   fi
-fi
+}
 
-ADDR="127.0.0.1:$CONTROL_PORT"
-HEALTHCHECK_SOCKS_PORT="$SOCKS_PORT"
-SOCKS_CONFIG="SocksPort 0.0.0.0:$SOCKS_PORT"
-HTTPS_PROXY_CONFIG="HTTPTunnelPort 0.0.0.0:$HTTPS_PROXY_PORT"
+hash_password() {
+  # Generate hashed password
+  if ! HASHED_PASSWORD=$(tor --hash-password "$PASSWORD" | tail -n 1); then
+    echo "ERROR: Failed to generate password hash" >&2
+    exit 1
+  fi
 
-# Docker healthcheck defaults
-CONTROL=$(cat <<EOF
+  if [ -z "$HASHED_PASSWORD" ]; then
+    echo "ERROR: Generated password hash is empty" >&2
+    exit 1
+  fi
+}
+
+avoid_port_conflict() {
+  # Prevent port conflict with an existing SOCKS port in the user's torrc
+  if [ -s "$CONFIG" ]; then
+    if grep -Eiq "^[[:space:]]*SocksPort[[:space:]]+([^[:space:]]*:)?${CONTROL_PORT}([[:space:]]|$)" "$CONFIG"; then
+      CONTROL_PORT=9951
+    fi
+  fi
+}
+
+first_torrc_value() {
+  local directive="$1"
+  local line value result=""
+
+  [ -s "$CONFIG" ] || return 1
+
+  while IFS= read -r line; do
+
+    value=$(echo "$line" | sed -E 's/^[[:space:]]*[^[:space:]]+[[:space:]]+//; s/[[:space:]].*$//')
+
+    case "$value" in
+      ""|0|auto|unix:*)
+        [ -z "$result" ] && result="$value"
+        ;;
+      *:*)
+        result="$value"
+        break
+        ;;
+      *)
+        result="$value"
+        break
+        ;;
+    esac
+
+  done < <(grep -Ei "^[[:space:]]*${directive}[[:space:]]+" "$CONFIG" || :)
+
+  [ -n "$result" ] || return 1
+  printf '%s\n' "$result"
+}
+
+configure_defaults() {
+  ADDR="127.0.0.1:$CONTROL_PORT"
+  HEALTHCHECK_SOCKS_PORT="$SOCKS_PORT"
+  SOCKS_CONFIG="SocksPort 0.0.0.0:$SOCKS_PORT"
+  HTTPS_PROXY_CONFIG="HTTPTunnelPort 0.0.0.0:$HTTPS_PROXY_PORT"
+
+  # Docker healthcheck defaults
+  CONTROL=$(cat <<EOF
 # Control port for healthcheck
 ControlPort 127.0.0.1:$CONTROL_PORT
 
@@ -59,144 +96,83 @@ ControlPort 127.0.0.1:$CONTROL_PORT
 HashedControlPassword $HASHED_PASSWORD
 EOF
 )
+}
 
-# Let the user's torrc override the SOCKS port used by the healthcheck.
-# If the user supplied any SocksPort, do not also add our default SocksPort.
-if [ -s "$CONFIG" ]; then
+apply_socks_override() {
+  local socks_value
 
-  socks_value=""
-
-  while IFS= read -r line; do
-
-    value=$(echo "$line" | sed -E 's/^[[:space:]]*[^[:space:]]+[[:space:]]+//; s/[[:space:]].*$//')
-
-    case "$value" in
-      ""|0|auto|unix:*)
-        [ -z "$socks_value" ] && socks_value="$value"
-        ;;
-      *:*)
-        socks_value="$value"
-        break
-        ;;
-      *)
-        socks_value="$value"
-        break
-        ;;
-    esac
-
-  done < <(grep -Ei '^[[:space:]]*SocksPort[[:space:]]+' "$CONFIG" || :)
-
-  if [ -n "$socks_value" ]; then
-
-    SOCKS_CONFIG=""
-
-    case "$socks_value" in
-      0|auto|unix:*)
-        HEALTHCHECK_SOCKS_PORT=""
-        ;;
-      *:*)
-        HEALTHCHECK_SOCKS_PORT="${socks_value##*:}"
-        ;;
-      *)
-        HEALTHCHECK_SOCKS_PORT="$socks_value"
-        ;;
-    esac
-
+  # Let the user's torrc override the SOCKS port used by the healthcheck.
+  # If the user supplied any SocksPort, do not also add our default SocksPort.
+  if ! socks_value=$(first_torrc_value "SocksPort"); then
+    return 0
   fi
 
-fi
+  SOCKS_CONFIG=""
 
-# If the user supplied any HTTPTunnelPort, do not also add our default HTTPS proxy.
-if [ -s "$CONFIG" ]; then
+  case "$socks_value" in
+    0|auto|unix:*)
+      HEALTHCHECK_SOCKS_PORT=""
+      ;;
+    *:*)
+      HEALTHCHECK_SOCKS_PORT="${socks_value##*:}"
+      ;;
+    *)
+      HEALTHCHECK_SOCKS_PORT="$socks_value"
+      ;;
+  esac
+}
 
-  https_proxy_value=""
+apply_https_proxy_override() {
+  local https_proxy_value
 
-  while IFS= read -r line; do
-
-    value=$(echo "$line" | sed -E 's/^[[:space:]]*[^[:space:]]+[[:space:]]+//; s/[[:space:]].*$//')
-
-    case "$value" in
-      ""|0|auto|unix:*)
-        [ -z "$https_proxy_value" ] && https_proxy_value="$value"
-        ;;
-      *:*)
-        https_proxy_value="$value"
-        break
-        ;;
-      *)
-        https_proxy_value="$value"
-        break
-        ;;
-    esac
-
-  done < <(grep -Ei '^[[:space:]]*HTTPTunnelPort[[:space:]]+' "$CONFIG" || :)
-
-  if [ -n "$https_proxy_value" ]; then
-    HTTPS_PROXY_CONFIG=""
+  # If the user supplied any HTTPTunnelPort, do not also add our default HTTPS proxy.
+  if ! https_proxy_value=$(first_torrc_value "HTTPTunnelPort"); then
+    return 0
   fi
 
-fi
+  HTTPS_PROXY_CONFIG=""
+}
 
-# Let the user's torrc override the control port, but still keep authentication
-# unless they already configured password authentication themselves.
-if [ -s "$CONFIG" ]; then
+apply_control_override() {
+  local control_value
 
-  control_value=""
-
-  while IFS= read -r line; do
-
-    value=$(echo "$line" | sed -E 's/^[[:space:]]*[^[:space:]]+[[:space:]]+//; s/[[:space:]].*$//')
-
-    case "$value" in
-      ""|0|auto|unix:*)
-        [ -z "$control_value" ] && control_value="$value"
-        ;;
-      *:*)
-        control_value="$value"
-        break
-        ;;
-      *)
-        control_value="$value"
-        break
-        ;;
-    esac
-
-  done < <(grep -Ei '^[[:space:]]*ControlPort[[:space:]]+' "$CONFIG" || :)
-
-  if [ -n "$control_value" ]; then
-
-    CONTROL=""
-
-    case "$control_value" in
-      0|auto|unix:*)
-        ADDR=""
-        CONTROL_PORT=""
-        ;;
-      *:*)
-        ADDR="$control_value"
-        CONTROL_PORT="${control_value##*:}"
-        ;;
-      *)
-        CONTROL_PORT="$control_value"
-        ADDR="127.0.0.1:$CONTROL_PORT"
-        ;;
-    esac
-
-    if grep -Eiq '^[[:space:]]*CookieAuthentication[[:space:]]+1([[:space:]]|$)' "$CONFIG"; then
-      echo "Warning: CookieAuthentication is enabled; Docker healthcheck uses password authentication." >&2
-    fi
-
-    if ! grep -Eiq '^[[:space:]]*HashedControlPassword[[:space:]]+' "$CONFIG"; then
-      CONTROL="HashedControlPassword $HASHED_PASSWORD"
-    fi
-
+  # Let the user's torrc override the control port, but still keep authentication
+  # unless they already configured password authentication themselves.
+  if ! control_value=$(first_torrc_value "ControlPort"); then
+    return 0
   fi
-fi
 
-# Create defaults file with Docker-safe settings.
-# When no user torrc exists, this file is used as the main config.
-# When a user torrc exists, these are only defaults and can be overridden.
-cat > "$DEFAULT_CONFIG" <<EOF
+  CONTROL=""
+
+  case "$control_value" in
+    0|auto|unix:*)
+      ADDR=""
+      CONTROL_PORT=""
+      ;;
+    *:*)
+      ADDR="$control_value"
+      CONTROL_PORT="${control_value##*:}"
+      ;;
+    *)
+      CONTROL_PORT="$control_value"
+      ADDR="127.0.0.1:$CONTROL_PORT"
+      ;;
+  esac
+
+  if grep -Eiq '^[[:space:]]*CookieAuthentication[[:space:]]+1([[:space:]]|$)' "$CONFIG"; then
+    echo "Warning: CookieAuthentication is enabled; Docker healthcheck uses password authentication." >&2
+  fi
+
+  if ! grep -Eiq '^[[:space:]]*HashedControlPassword[[:space:]]+' "$CONFIG"; then
+    CONTROL="HashedControlPassword $HASHED_PASSWORD"
+  fi
+}
+
+write_default_config() {
+  # Create defaults file with Docker-safe settings.
+  # When no user torrc exists, this file is used as the main config.
+  # When a user torrc exists, these are only defaults and can be overridden.
+  cat > "$DEFAULT_CONFIG" <<EOF
 # Default settings for Tor container
 
 RunAsDaemon 0
@@ -212,13 +188,15 @@ $HTTPS_PROXY_CONFIG
 $CONTROL
 EOF
 
-chown tor:tor "$DEFAULT_CONFIG"
-chmod 0644 "$DEFAULT_CONFIG"
+  chown tor:tor "$DEFAULT_CONFIG"
+  chmod 0644 "$DEFAULT_CONFIG"
+}
 
-# Write resolved healthcheck configuration.
-# Docker HEALTHCHECK processes do not inherit variables exported by this script,
-# so the healthcheck binary reads this file instead.
-cat > "$HEALTHCHECK_ENV" <<EOF
+write_healthcheck_env() {
+  # Write resolved healthcheck configuration.
+  # Docker HEALTHCHECK processes do not inherit variables exported by this script,
+  # so the healthcheck binary reads this file instead.
+  cat > "$HEALTHCHECK_ENV" <<EOF
 ADDR=$ADDR
 PASSWORD=$PASSWORD
 CHECK=${CHECK:-false}
@@ -227,13 +205,28 @@ SOCKS_PORT=$HEALTHCHECK_SOCKS_PORT
 HTTPS_PROXY_PORT=$HTTPS_PROXY_PORT
 EOF
 
-chown tor:tor "$HEALTHCHECK_ENV"
-chmod 0600 "$HEALTHCHECK_ENV"
+  chown tor:tor "$HEALTHCHECK_ENV"
+  chmod 0600 "$HEALTHCHECK_ENV"
+}
 
-# If the user supplied a torrc, load our file as defaults so their config wins.
-# If no torrc exists, use our file as the main config to avoid relying on Tor's defaults.
-if [ -s "$CONFIG" ]; then
-  exec su-exec tor tor --defaults-torrc "$DEFAULT_CONFIG"
-else
-  exec su-exec tor tor -f "$DEFAULT_CONFIG"
-fi
+start_tor() {
+  # If the user supplied a torrc, load our file as defaults so their config wins.
+  # If no torrc exists, use our file as the main config to avoid relying on Tor's defaults.
+  if [ -s "$CONFIG" ]; then
+    exec su-exec tor tor --defaults-torrc "$DEFAULT_CONFIG"
+  else
+    exec su-exec tor tor -f "$DEFAULT_CONFIG"
+  fi
+}
+
+fix_permissions
+hash_password
+avoid_port_conflict
+configure_defaults
+apply_socks_override
+apply_https_proxy_override
+apply_control_override
+write_default_config
+write_healthcheck_env
+
+start_tor
