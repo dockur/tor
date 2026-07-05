@@ -35,10 +35,7 @@ COPY --chmod=755 --from=builder /build/healthcheck /usr/local/bin/healthcheck
 
 ENV CHECK=false
 ENV DEBUG=false
-ENV SOCKS_PORT=9050
-ENV CONTROL_PORT=9051
 ENV PASSWORD=password
-ENV HTTPS_PROXY_PORT=8118
 
 EXPOSE 9050 8118
 
