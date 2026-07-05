@@ -19,6 +19,7 @@ Docker container of the [Tor](https://www.torproject.org/) network proxy daemon.
 - Provides SOCKSv5 and HTTPS proxy access.
 - Supports relay, exit node, bridge, and hidden service modes through custom configuration.
 - Includes an extensive healthcheck, plus monitoring via [Nyx](https://nyx.torproject.org/) and pluggable transport support via Lyrebird.
+- Lightweight Alpine-based image.
 
 ## Usage 🐳
 
