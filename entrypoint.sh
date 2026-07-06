@@ -27,6 +27,8 @@ fix_permissions() {
   else
     echo "Warning: /etc/tor is not writable, leaving permissions unchanged" >&2
   fi
+
+  return 0
 }
 
 hash_password() {
@@ -40,6 +42,8 @@ hash_password() {
     echo "ERROR: Generated password hash is empty" >&2
     exit 1
   fi
+
+  return 0
 }
 
 avoid_port_conflict() {
@@ -49,6 +53,8 @@ avoid_port_conflict() {
       CONTROL_PORT=9951
     fi
   fi
+
+  return 0
 }
 
 first_torrc_value() {
@@ -96,6 +102,8 @@ ControlPort 127.0.0.1:$CONTROL_PORT
 HashedControlPassword $HASHED_PASSWORD
 EOF
 )
+
+return 0
 }
 
 apply_socks_override() {
@@ -120,6 +128,8 @@ apply_socks_override() {
       HEALTHCHECK_SOCKS_PORT="$socks_value"
       ;;
   esac
+
+  return 0
 }
 
 apply_https_proxy_override() {
@@ -131,6 +141,8 @@ apply_https_proxy_override() {
   fi
 
   HTTPS_PROXY_CONFIG=""
+
+  return 0
 }
 
 apply_control_override() {
@@ -166,6 +178,8 @@ apply_control_override() {
   if ! grep -Eiq '^[[:space:]]*HashedControlPassword[[:space:]]+' "$CONFIG"; then
     CONTROL="HashedControlPassword $HASHED_PASSWORD"
   fi
+
+  return 0
 }
 
 write_default_config() {
@@ -190,6 +204,8 @@ EOF
 
   chown tor:tor "$DEFAULT_CONFIG"
   chmod 0644 "$DEFAULT_CONFIG"
+
+  return 0
 }
 
 write_healthcheck_env() {
@@ -207,6 +223,8 @@ EOF
 
   chown tor:tor "$HEALTHCHECK_ENV"
   chmod 0600 "$HEALTHCHECK_ENV"
+
+  return 0
 }
 
 start_tor() {
