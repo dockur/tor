@@ -200,11 +200,9 @@ apply_socks_override() {
 
 apply_https_proxy_override() {
 
-  local https_proxy_value
-
   # If the user supplied any HTTPTunnelPort, do not also add our default HTTPS proxy.
 
-  if ! https_proxy_value=$(first_torrc_value "HTTPTunnelPort"); then
+  if ! first_torrc_value "HTTPTunnelPort" >/dev/null; then
     return 0
   fi
 
