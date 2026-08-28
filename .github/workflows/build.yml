@@ -2,7 +2,7 @@ name: Build
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: "0 0 * * *"
 
 concurrency:
   group: build
@@ -11,14 +11,14 @@ concurrency:
 jobs:
   build:
     name: Build
+    if: ${{ github.repository == 'dockur/tor' }}
     runs-on: ubuntu-latest
     permissions:
       actions: write
       packages: write
       contents: read
     steps:
-      -
-        name: Get remote package data
+      - name: Get remote package data
         run: |
           set -e -o pipefail
           latest_tag=$(curl -sSf https://dl-cdn.alpinelinux.org/edge/community/aarch64/APKINDEX.tar.gz |
@@ -37,26 +37,22 @@ jobs:
           echo "latest_version=${latest_tag%-*}" >> $GITHUB_ENV
           echo "latest_minor=$major.$minor.$patch" >> $GITHUB_ENV
           echo "latest_major=$major.$minor" >> $GITHUB_ENV
-      - 
-        name: Check if the tag exists locally
+      - name: Check if the tag exists locally
         uses: action-pack/tag-exists@v1
         id: checkTag
-        with: 
-          tag: 'v${{ env.latest_tag }}'         
-      -
-        name: Finish when found
+        with:
+          tag: "v${{ env.latest_tag }}"
+      - name: Finish when found
         run: |
           #!/bin/bash
           val="${{ steps.checkTag.outputs.exists }}"
           echo "exists=${val}" >> $GITHUB_ENV
-      -
-        name: Checkout
+      - name: Checkout
         if: env.exists == 'false'
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      -
-        name: Docker metadata
+      - name: Docker metadata
         id: meta
         if: env.exists == 'false'
         uses: docker/metadata-action@v6
@@ -74,27 +70,23 @@ jobs:
             org.opencontainers.image.title=${{ vars.NAME }}
         env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
-      - 
-        name: Set up Docker Buildx
+      - name: Set up Docker Buildx
         if: env.exists == 'false'
         uses: docker/setup-buildx-action@v4
-      -
-        name: Login into Docker Hub
+      - name: Login into Docker Hub
         if: env.exists == 'false'
         uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      -
-        name: Login to GitHub Container Registry
+      - name: Login to GitHub Container Registry
         if: env.exists == 'false'
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      -
-        name: Build Docker image
+      - name: Build Docker image
         if: env.exists == 'false'
         uses: docker/build-push-action@v7
         with:
@@ -107,16 +99,14 @@ jobs:
           annotations: ${{ steps.meta.outputs.annotations }}
           build-args: |
             VERSION_ARG=${{ env.latest_version }}
-      -
-        name: Create a release
+      - name: Create a release
         if: env.exists == 'false'
         uses: action-pack/github-release@v2
         with:
           tag: "v${{ env.latest_tag }}"
           title: "v${{ env.latest_version }}"
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
-      -
-        name: Send mail
+      - name: Send mail
         if: env.exists == 'false'
         uses: action-pack/send-mail@v1
         with:
@@ -125,6 +115,6 @@ jobs:
           connection_url: ${{secrets.MAIL_CONNECTION}}
           subject: Build of ${{ github.event.repository.name }} v${{ env.latest_tag }} completed
           body: |
-              The build job of ${{ github.event.repository.name }} v${{ env.latest_tag }} was completed successfully! 
-              
-              See https://github.com/${{ github.repository }}/actions for more information.
+            The build job of ${{ github.event.repository.name }} v${{ env.latest_tag }} was completed successfully! 
+
+            See https://github.com/${{ github.repository }}/actions for more information.
